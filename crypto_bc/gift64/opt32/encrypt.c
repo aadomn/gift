@@ -106,12 +106,6 @@ void precompute_rkeys(u32* rkey, const u8* key) {
 ****************************************************************************/
 void packing(u32* state, const u8* block0, const u8* block1) {
 	u32 tmp;
-	/*
-	state[0] = BUILD_U32_BIG(block0 + 4);
-	state[1] = BUILD_U32_BIG(block1 + 4);
-	state[2] = BUILD_U32_BIG(block0);
-	state[3] = BUILD_U32_BIG(block1);
-	*/
 	state[0] = U32BIG(*(u32*)(block0 + 4));
 	state[1] = U32BIG(*(u32*)(block1 + 4));
 	state[2] = U32BIG(*(u32*)block0);
