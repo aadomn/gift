@@ -95,9 +95,8 @@ void key_update(u32* next_rkey, const u32* prev_rkey) {
 ****************************************************************************/
 void precompute_rkeys(u32* rkey, const u8* key) {
 	rearrange_key(rkey, key);
-	for(int i = 0; i < 48; i += 8) {
+	for(int i = 0; i < 48; i += 8)
 		key_update(rkey + i + 8, rkey + i);
-	}
 }
 
 /****************************************************************************
