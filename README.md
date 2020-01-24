@@ -12,7 +12,7 @@ This repository contains optimized software implementations for the following al
 
 For each algorithm, one can find:
 
-- `opt32`: 32-bit oriented C implementation  
+- `opt32`: 32-bit word oriented C implementation  
 - `armcortexm`: ARM assembly implementation for Cortex-M processors 
 
 # Interface
