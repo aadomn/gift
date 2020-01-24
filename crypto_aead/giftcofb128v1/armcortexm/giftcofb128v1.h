@@ -1,7 +1,7 @@
 #ifndef GIFT_COFB_H_
 #define GIFT_COFB_H_
 
-#define TAG_SIZE    16
+#define TAG_SIZE        16
 #define COFB_ENCRYPT    1
 #define COFB_DECRYPT    0
 
