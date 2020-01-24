@@ -11,7 +11,7 @@
 #include "key_schedule.h"
 
 /*****************************************************************************
-* The round constants according to the new representation.
+* The round constants according to the fixsliced representation.
 *****************************************************************************/
 const u32 rconst[40] = {
     0x10000008, 0x80018000, 0x54000002, 0x01010181,
@@ -28,8 +28,8 @@ const u32 rconst[40] = {
 
 /*****************************************************************************
 * The first 20 rkeys are computed using the classical representation before
-* being rearranged into new representations depending on their round number.
-* The 60 remaining rkeys are directly computed in the rightrepresentation.
+* being rearranged into fixsliced representations depending on round numbers.
+* The 60 remaining rkeys are directly computed in fixscliced representations.
 *****************************************************************************/
 void precompute_rkeys(u32* rkey, const u8* key) {
     u32 tmp;
@@ -43,7 +43,7 @@ void precompute_rkeys(u32* rkey, const u8* key) {
         rkey[i+4] = rkey[i+1];
         rkey[i+5] = KEY_UPDATE(rkey[i]);
     }
-    // transposition to new representations
+    // transposition to fixsliced representations
     for(int i = 0; i < 20; i+=10) {
         rkey[i] = REARRANGE_RKEY_0(rkey[i]);
         rkey[i + 1] = REARRANGE_RKEY_0(rkey[i + 1]);
@@ -54,7 +54,7 @@ void precompute_rkeys(u32* rkey, const u8* key) {
         rkey[i + 6] = REARRANGE_RKEY_3(rkey[i + 6]);
         rkey[i + 7] = REARRANGE_RKEY_3(rkey[i + 7]);
     }
-    // keyschedule according to new representations
+    // keyschedule according to fixsliced representations
     for(int i = 20; i < 80; i+=10) {
         rkey[i] = rkey[i-19];
         rkey[i+1] = KEY_TRIPLE_UPDATE_0(rkey[i-20]);

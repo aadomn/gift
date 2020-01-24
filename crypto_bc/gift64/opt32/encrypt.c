@@ -101,7 +101,7 @@ void precompute_rkeys(u32* rkey, const u8* key) {
 
 /****************************************************************************
 * Fills the internal state with two 64-bit blocks using a nibble-interleaved 
-* row-wise bitsliced representation as described in the paper.
+* row-wise bitsliced representation.
 ****************************************************************************/
 void packing(u32* state, const u8* block0, const u8* block1) {
 	u32 tmp;

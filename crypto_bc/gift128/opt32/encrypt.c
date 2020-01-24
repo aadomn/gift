@@ -29,8 +29,8 @@ const u32 rconst[40] = {
 
 /*****************************************************************************
 * The first 20 rkeys are computed using the classical representation before
-* being rearranged into new representations depending on their round number.
-* The 60 remaining rkeys are directly computed in the right representation.
+* being rearranged into fixsliced representations depending on round numbers.
+* The 60 remaining rkeys are directly computed in fixsliced representations.
 *****************************************************************************/
 void precompute_rkeys(u32* rkey, const u8* key) {
 	u32 tmp;
@@ -44,7 +44,7 @@ void precompute_rkeys(u32* rkey, const u8* key) {
 		rkey[i+4] = rkey[i+1];
 		rkey[i+5] = KEY_UPDATE(rkey[i]);
 	}
-	// transposition to new representations
+	// transposition to fixsliced representations
 	for(int i = 0; i < 20; i+=10) {
 		rkey[i]	= REARRANGE_RKEY_0(rkey[i]);
 		rkey[i + 1]	= REARRANGE_RKEY_0(rkey[i + 1]);
@@ -55,7 +55,7 @@ void precompute_rkeys(u32* rkey, const u8* key) {
 		rkey[i + 6]	= REARRANGE_RKEY_3(rkey[i + 6]);
 		rkey[i + 7]	= REARRANGE_RKEY_3(rkey[i + 7]);
 	}
-	// keyschedule according to new representations
+	// keyschedule according to fixsliced representations
 	for(int i = 20; i < 80; i+=10) {
 		rkey[i] = rkey[i-19];
 		rkey[i+1] = KEY_TRIPLE_UPDATE_0(rkey[i-20]);
@@ -133,7 +133,7 @@ void unpacking(u8* output, u32* state) {
 
 /*****************************************************************************
 * Encryption of 128-bit blocks using GIFT-128 in ECB mode.
-* Note that ptext_len must be a mutliple of 16.
+* Note that 'ptext_len' must be a mutliple of 16.
 *****************************************************************************/
 int gift128_encrypt_ecb(u8* ctext, const u8* ptext, u32 ptext_len, const u8* key) {
 	u32 tmp, state[4], rkey[80];
@@ -152,7 +152,7 @@ int gift128_encrypt_ecb(u8* ctext, const u8* ptext, u32 ptext_len, const u8* key
 
 /*****************************************************************************
 * Decryption of 128-bit blocks using GIFT-128 in ECB mode.
-* Note that ctext_len must be a mutliple of 16.
+* Note that 'ctext_len' must be a mutliple of 16.
 *****************************************************************************/
 int gift128_decrypt_ecb(u8* ptext, const u8* ctext, u32 ctext_len, const u8* key) {
 	u32 tmp, state[4], rkey[80];
