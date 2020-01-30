@@ -4,7 +4,7 @@
 * @author   Alexandre Adomnicai, Nanyang Technological University,
 *           alexandre.adomnicai@ntu.edu.sg
 * @date     January 2020
- ******************************************************************************/
+*******************************************************************************/
 #include <string.h> //for memcpy
 #include "api.h"
 #include "cofb.h"
@@ -17,7 +17,7 @@
 
 /****************************************************************************
 * 32-bit padding implementation.
- ***************************************************************************/
+****************************************************************************/
 static inline void padding(u32* d, const u32* s, const u32 no_of_bytes){
     u32 i;
     if (no_of_bytes == 0) {
@@ -46,7 +46,7 @@ static inline void padding(u32* d, const u32* s, const u32 no_of_bytes){
 * Constant-time implementation of the GIFT-COFB authenticated cipher based on
 * fixsliced GIFTb-128. Encryption/decryption is handled by the same function,
 * depending on the 'encrypting' parameter (1/0).
- ***************************************************************************/
+****************************************************************************/
 int giftcofb_crypt(u8* out, const u8* key, const u8* nonce, const u8* ad,
                 u32 ad_len, const u8* in, u32 in_len, const int encrypting) {
 
@@ -136,6 +136,9 @@ int giftcofb_crypt(u8* out, const u8* key, const u8* nonce, const u8* ad,
     return tmp0;
 }
 
+/****************************************************************************
+* API required by the NIST for the LWC competition.
+****************************************************************************/
 int crypto_aead_encrypt(unsigned char* c, unsigned long long* clen,
                     const unsigned char* m, unsigned long long mlen,
                     const unsigned char* ad, unsigned long long adlen,
@@ -146,6 +149,9 @@ int crypto_aead_encrypt(unsigned char* c, unsigned long long* clen,
     return giftcofb_crypt(c, k, npub, ad, adlen, m, mlen, COFB_ENCRYPT);
 }
 
+/****************************************************************************
+* API required by the NIST for the LWC competition.
+****************************************************************************/
 int crypto_aead_decrypt(unsigned char* m, unsigned long long *mlen,
                     unsigned char* nsec, const unsigned char* c,
                     unsigned long long clen, const unsigned char* ad,
