@@ -1,11 +1,11 @@
 /*******************************************************************************
-* Constant-time ARM assembly implementation of the GIFT-COFB authenticated
-* cipher.
+* Constant-time ARM assembly implementation of the GIFTb-128 block cipher used 
+* in the GIFT-COFB authenticated cipher.
 * 
 * @author   Alexandre Adomnicai, Nanyang Technological University,
 *           alexandre.adomnicai@ntu.edu.sg
 * @date     January 2020
- ******************************************************************************/
+*******************************************************************************/
 
 .syntax unified
 .thumb
