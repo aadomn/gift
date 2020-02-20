@@ -14,7 +14,7 @@
 * Fully unrolled ARM assembly implementation of the GIFT-128 key schedule 
 * according to the fixsliced representation.
 *****************************************************************************/
-@ void gift128_keyschedule(const u8* key, u32* rkey) {
+@ void gift128_keyschedule(const u8* key, u32* rkey)
 .global gift128_keyschedule
 .type   gift128_keyschedule,%function
 gift128_keyschedule:

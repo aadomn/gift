@@ -16,8 +16,7 @@
 * Note that if in the GIFT specification, W0,...,W12 refer to 16-bit words, 
 * here we consider 32-bit ones as each 16-bit word is interleaved with itself.
 *****************************************************************************/
-@ void gift64_rearrange_key(u32* rkey,
-@   const u8* key) {
+@ void gift64_rearrange_key(u32* rkey, const u8* key)
 .global gift64_rearrange_key
 .type   gift64_rearrange_key,%function
 gift64_rearrange_key:
@@ -211,7 +210,7 @@ gift64_rearrange_key:
 /*****************************************************************************
 * Fully unrolled ARM assembly implementation of the GIFTb-64 key schedule.
 *****************************************************************************/
-@ void giftb64_keyschedule(u32 *rkey) {
+@ void giftb64_keyschedule(u32 *rkey)
 .global giftb64_keyschedule
 .type   giftb64_keyschedule,%function
 giftb64_keyschedule:
@@ -480,8 +479,7 @@ giftb64_keyschedule:
 * This function encrypts 2 64-bit blocks in parallel to take advantage of the 
 * 32-bit architecture. 
 *****************************************************************************/
-@ void gift64_encrypt_block(u8 *out, const u32* rkey,
-@       const u8 *block0, const u8* block1) {
+@ void gift64_encrypt_block(u8 *out, const u32* rkey, const u8 *block0, const u8* block1)
 .global gift64_encrypt_block
 .type   gift64_encrypt_block,%function
 gift64_encrypt_block:
@@ -1283,8 +1281,7 @@ gift64_encrypt_block:
 * /!\/!\/!\             FOR BENCHMARK PURPOSES ONLY                  /!\/!\/!\
 * /!\/!\/!\ THE WAY THE COUNTER IS HANDLED IS NOT SAFE ACCROSS CALLS /!\/!\/!\
 *****************************************************************************/
-@ void gift64_encrypt_ctr(u8 *ctext, param const* p,
-@       const u8* ptext, const u32 ptext_len) {
+@ void gift64_encrypt_ctr(u8 *ctext, param const* p, const u8* ptext, const u32 ptext_len)
 .global gift64_encrypt_ctr
 .type   gift64_encrypt_ctr,%function
 gift64_encrypt_ctr:
@@ -2101,8 +2098,7 @@ gift_ctr_exit:
 * This function encrypts 2 64-bit blocks in parallel to take advantage of the 
 * 32-bit architecture. 
 *****************************************************************************/
-@ void giftb64_encrypt_block(u8 *out, const u32* rkey,
-@       const u8 *block0, const u8* block1) {
+@ void giftb64_encrypt_block(u8 *out, const u32* rkey, const u8 *block0, const u8* block1)
 .global giftb64_encrypt_block
 .type   giftb64_encrypt_block,%function
 giftb64_encrypt_block:
@@ -2827,8 +2823,7 @@ giftb64_encrypt_block:
 * /!\/!\/!\             FOR BENCHMARK PURPOSES ONLY                  /!\/!\/!\
 * /!\/!\/!\ THE WAY THE COUNTER IS HANDLED IS NOT SAFE ACCROSS CALLS /!\/!\/!\
 *****************************************************************************/
-@ void giftb64_encrypt_ctr(u8 *ctext, param const* p,
-@       const u8* ptext, const u32 ptext_len) {
+@ void giftb64_encrypt_ctr(u8 *ctext, param const* p, const u8* ptext, const u32 ptext_len)
 .global giftb64_encrypt_ctr
 .type   giftb64_encrypt_ctr,%function
 giftb64_encrypt_ctr:

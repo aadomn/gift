@@ -14,7 +14,7 @@
 * Fully unrolled ARM assembly implementation of the GIFT-128 key schedule 
 * according to the new representation.
 *****************************************************************************/
-@ void gift128_keyschedule(const u8* key, u32* rkey) {
+@ void gift128_keyschedule(const u8* key, u32* rkey)
 .global gift128_keyschedule
 .type   gift128_keyschedule,%function
 gift128_keyschedule:
@@ -900,8 +900,7 @@ gift128_keyschedule:
 * Fully unrolled ARM assembly implementation of the GIFT-128 block cipher.
 * This function simply encrypts a 128-bit block, without any operation mode.
 *****************************************************************************/
-@ void gift128_encrypt_block(u8 *out, const u32* rkey,
-@       const u8 *block) {
+@ void gift128_encrypt_block(u8 *out, const u32* rkey, const u8 *block)
 .global gift128_encrypt_block
 .type   gift128_encrypt_block,%function
 gift128_encrypt_block:
@@ -2180,8 +2179,7 @@ gift128_encrypt_block:
 * This functions take as input an IV, plaintext blocks and precomputed rkeys 
 * and increments the counter for each block to encrypt.
 *****************************************************************************/
-@ void gift128_encrypt_ctr(u8*, param_128 const *,
-@       const u8*, const u32){
+@ void gift128_encrypt_ctr(u8*, param_128 const *, const u8*, const u32)
 .global gift128_encrypt_ctr
 .type   gift128_encrypt_ctr,%function
 gift128_encrypt_ctr:
@@ -3502,8 +3500,7 @@ gift_ctr_exit:
 * Fully unrolled ARM assembly implementation of the GIFTb-128 block cipher.
 * This function simply encrypts a 128-bit block, without any operation mode.
 *****************************************************************************/
-@ void giftb128_encrypt_block(u8 *out, const u32* rkey,
-@       const u8 *block) {
+@ void giftb128_encrypt_block(u8 *out, const u32* rkey, const u8 *block)
 .global giftb128_encrypt_block
 .type   giftb128_encrypt_block,%function
 giftb128_encrypt_block:
@@ -4630,8 +4627,7 @@ giftb128_encrypt_block:
 * This functions take as input an IV, plaintext blocks and precomputed rkeys 
 * and increments the counter for each block to encrypt.
 *****************************************************************************/
-@ void giftb128_encrypt_ctr(u8*, param_128 const *,
-@       const u8*, const u32){
+@ void giftb128_encrypt_ctr(u8*, param_128 const *, const u8*, const u32)
 .global giftb128_encrypt_ctr
 .type   giftb128_encrypt_ctr,%function
 giftb128_encrypt_ctr:
