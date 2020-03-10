@@ -18,7 +18,6 @@
 * Note that if in the GIFT specification, W0,...,W12 refer to 16-bit words, 
 * here we consider 32-bit ones as each 16-bit word is interleaved with itself.
 *****************************************************************************/
-.align 2
 @ void  gift64_rearrange_key(u32* rkey, const u8* key)
 .global gift64_rearrange_key
 .type   gift64_rearrange_key,%function
