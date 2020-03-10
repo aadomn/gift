@@ -214,12 +214,12 @@ rearrange_rkey_3:
     strd    r5, r7, [r1]
     bx      lr
 
-.align 2
 /*****************************************************************************
 * Code size optimized implementation of the GIFTb-128 key schedule.
 * Compute the key schedule in the normal representation and then rearrange all
 * the round keys in their respective fixsliced representations.
 *****************************************************************************/
+.align 2
 @ void gift128_keyschedule(const u8* key, u32* rkey)
 .global gift128_keyschedule
 .type   gift128_keyschedule,%function
@@ -474,6 +474,7 @@ quintuple_round:
 * Code size optimized implementation of the GIFTb-128 block cipher.
 * This function simply encrypts a 128-bit block, without any operation mode.
 *****************************************************************************/
+.align 2
 @ void giftb128_encrypt_block(u8 *out, const u32* rkey, const u8 *block)
 .global giftb128_encrypt_block
 .type   giftb128_encrypt_block,%function
