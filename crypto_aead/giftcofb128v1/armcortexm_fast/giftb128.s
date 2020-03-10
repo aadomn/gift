@@ -928,8 +928,7 @@ gift128_keyschedule:
 * Fully unrolled ARM assembly implementation of the GIFTb-128 block cipher.
 * This function simply encrypts a 128-bit block, without any operation mode.
 *****************************************************************************/
-@ void giftb128_encrypt_block(u8 *out, const u32* rkey,
-@       const u8 *block) {
+@ void giftb128_encrypt_block(u8 *out, const u32* rkey, const u8 *block)
 .global giftb128_encrypt_block
 .type   giftb128_encrypt_block,%function
 giftb128_encrypt_block:
