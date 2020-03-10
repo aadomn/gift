@@ -5,21 +5,6 @@
 #define COFB_ENCRYPT    1
 #define COFB_DECRYPT    0
 
-typedef unsigned char u8;
-typedef unsigned int u32;
-
-int crypto_aead_encrypt(unsigned char* c, unsigned long long* clen,
-                    const unsigned char* m, unsigned long long mlen,
-                    const unsigned char* ad, unsigned long long adlen,
-                    const unsigned char* nsec, const unsigned char* npub,
-                    const unsigned char* k);
-
-int crypto_aead_decrypt(unsigned char* m, unsigned long long *mlen,
-                    unsigned char* nsec, const unsigned char* c,
-                    unsigned long long clen, const unsigned char* ad,
-                    unsigned long long adlen, const unsigned char* npub,
-                    const unsigned char *k);
-
 #define DOUBLE_HALF_BLOCK(x) ({                                             \
     tmp0 = (x)[0];                                                          \
     (x)[0] = (((x)[0] & 0x7f7f7f7f) << 1) | (((x)[0] & 0x80808080) >> 15);  \

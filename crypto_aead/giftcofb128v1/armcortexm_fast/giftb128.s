@@ -1,900 +1,928 @@
-/*******************************************************************************
-* Constant-time ARM assembly implementation of the GIFTb-128 block cipher used 
-* in the GIFT-COFB authenticated cipher.
-* 
+/****************************************************************************
+* Fully unrolled ARM assembly implementation of the GIFTn-128 block cipher.
+* This implementation focuses on speed, at the cost of a large code size.
+* See "Fixslicing: A New GIFT Representation" paper available at 
+* https:// for more details.
+*
 * @author   Alexandre Adomnicai, Nanyang Technological University,
 *           alexandre.adomnicai@ntu.edu.sg
-* @date     January 2020
-*******************************************************************************/
+* @date     March 2020
+****************************************************************************/
 
 .syntax unified
 .thumb
-
 /*****************************************************************************
-* Fully unrolled ARM assembly implementation of the GIFT-128 key schedule 
-* according to the fixsliced representation.
+* Fully unrolled implementation of the GIFT-128 key schedule according to the
+* fixsliced representation.
 *****************************************************************************/
 @ void gift128_keyschedule(const u8* key, u32* rkey)
 .global gift128_keyschedule
 .type   gift128_keyschedule,%function
 gift128_keyschedule:
-    push {r2-r12, r14}
-    // load key
-    ldm r0, {r4-r7}
-    rev r4, r4
-    rev r5, r5
-    rev r6, r6
-    rev r7, r7
-    strd r7, r5, [r1]
-    strd r6, r4, [r1, #8]
+    push    {r2-r12, r14}
+    ldm     r0, {r4-r7}             //load key words
+    rev     r4, r4
+    rev     r5, r5
+    rev     r6, r6
+    rev     r7, r7
+    str.w   r6, [r1, #8]
+    str.w   r4, [r1, #12]
+    str.w   r7, [r1]
+    str.w   r5, [r1, #4]
     // keyschedule using classical representation for the first 20 rounds
-    // masks for key update
-    movw r12, #0x3fff
-    lsl r12, r12, #16
-    movw r11, #0x0003
-    lsl r11, r11, #16
-    movw r10, #0x000f
-    movw r9, #0x0fff
+    movw    r12, #0x3fff
+    lsl     r12, r12, #16           //r12<- 0x3fff0000
+    movw    r10, #0x000f            //r10<- 0x0000000f
+    movw    r9, #0x0fff             //r9 <- 0x00000fff
     // 1st classical key update
-    and r2, r10, r7, lsr #12
-    and r3, r7, r9
-    orr r2, r2, r3, lsl #4
-    and r3, r12, r7, lsr #2
-    orr r2, r2, r3
-    and r7, r7, r11
-    orr r7, r2, r7, lsl #14
-    strd r5, r7, [r1, #16]
+    and     r2, r10, r7, lsr #12
+    and     r3, r7, r9
+    orr     r2, r2, r3, lsl #4
+    and     r3, r12, r7, lsr #2
+    orr     r2, r2, r3
+    and     r7, r7, #0x00030000
+    orr     r7, r2, r7, lsl #14
+    str.w   r5, [r1, #16]
+    str.w   r7, [r1, #20]
     // 2nd classical key update
-    and r2, r10, r6, lsr #12
-    and r3, r6, r9
-    orr r2, r2, r3, lsl #4
-    and r3, r12, r6, lsr #2
-    orr r2, r2, r3
-    and r6, r6, r11
-    orr r6, r2, r6, lsl #14
-    strd r4, r6, [r1, #24]
+    and     r2, r10, r6, lsr #12
+    and     r3, r6, r9
+    orr     r2, r2, r3, lsl #4
+    and     r3, r12, r6, lsr #2
+    orr     r2, r2, r3
+    and     r6, r6, #0x00030000
+    orr     r6, r2, r6, lsl #14
+    str.w   r4, [r1, #24]
+    str.w   r6, [r1, #28]
     // 3rd classical key update
-    and r2, r10, r5, lsr #12
-    and r3, r5, r9
-    orr r2, r2, r3, lsl #4
-    and r3, r12, r5, lsr #2
-    orr r2, r2, r3
-    and r5, r5, r11
-    orr r5, r2, r5, lsl #14
-    strd r7, r5, [r1, #32]
+    and     r2, r10, r5, lsr #12
+    and     r3, r5, r9
+    orr     r2, r2, r3, lsl #4
+    and     r3, r12, r5, lsr #2
+    orr     r2, r2, r3
+    and     r5, r5, #0x00030000
+    orr     r5, r2, r5, lsl #14
+    str.w   r7, [r1, #32]
+    str.w   r5, [r1, #36]
     // 4th classical key update
-    and r2, r10, r4, lsr #12
-    and r3, r4, r9
-    orr r2, r2, r3, lsl #4
-    and r3, r12, r4, lsr #2
-    orr r2, r2, r3
-    and r4, r4, r11
-    orr r4, r2, r4, lsl #14
-    strd r6, r4, [r1, #40]
+    and     r2, r10, r4, lsr #12
+    and     r3, r4, r9
+    orr     r2, r2, r3, lsl #4
+    and     r3, r12, r4, lsr #2
+    orr     r2, r2, r3
+    and     r4, r4, #0x00030000
+    orr     r4, r2, r4, lsl #14
+    str.w   r6, [r1, #40]
+    str.w   r4, [r1, #44]
     // 5th classical key update
-    and r2, r10, r7, lsr #12
-    and r3, r7, r9
-    orr r2, r2, r3, lsl #4
-    and r3, r12, r7, lsr #2
-    orr r2, r2, r3
-    and r7, r7, r11
-    orr r7, r2, r7, lsl #14
-    strd r5, r7, [r1, #48]
+    and     r2, r10, r7, lsr #12
+    and     r3, r7, r9
+    orr     r2, r2, r3, lsl #4
+    and     r3, r12, r7, lsr #2
+    orr     r2, r2, r3
+    and     r7, r7, #0x00030000
+    orr     r7, r2, r7, lsl #14
+    str.w   r5, [r1, #48]
+    str.w   r7, [r1, #52]
     // 6th classical key update
-    and r2, r10, r6, lsr #12
-    and r3, r6, r9
-    orr r2, r2, r3, lsl #4
-    and r3, r12, r6, lsr #2
-    orr r2, r2, r3
-    and r6, r6, r11
-    orr r6, r2, r6, lsl #14
-    strd r4, r6, [r1, #56]
+    and     r2, r10, r6, lsr #12
+    and     r3, r6, r9
+    orr     r2, r2, r3, lsl #4
+    and     r3, r12, r6, lsr #2
+    orr     r2, r2, r3
+    and     r6, r6, #0x00030000
+    orr     r6, r2, r6, lsl #14
+    str.w   r4, [r1, #56]
+    str.w   r6, [r1, #60]
     // 7th classical key update
-    and r2, r10, r5, lsr #12
-    and r3, r5, r9
-    orr r2, r2, r3, lsl #4
-    and r3, r12, r5, lsr #2
-    orr r2, r2, r3
-    and r5, r5, r11
-    orr r5, r2, r5, lsl #14
-    strd r7, r5, [r1, #64]
+    and     r2, r10, r5, lsr #12
+    and     r3, r5, r9
+    orr     r2, r2, r3, lsl #4
+    and     r3, r12, r5, lsr #2
+    orr     r2, r2, r3
+    and     r5, r5, #0x00030000
+    orr     r5, r2, r5, lsl #14
+    str.w   r7, [r1, #64]
+    str.w   r5, [r1, #68]
     // 8th classical key update
-    and r2, r10, r4, lsr #12
-    and r3, r4, r9
-    orr r2, r2, r3, lsl #4
-    and r3, r12, r4, lsr #2
-    orr r2, r2, r3
-    and r4, r4, r11
-    orr r4, r2, r4, lsl #14
-    strd r6, r4, [r1, #72]
+    and     r2, r10, r4, lsr #12
+    and     r3, r4, r9
+    orr     r2, r2, r3, lsl #4
+    and     r3, r12, r4, lsr #2
+    orr     r2, r2, r3
+    and     r4, r4, #0x00030000
+    orr     r4, r2, r4, lsl #14
+    str.w   r6, [r1, #72]
+    str.w   r4, [r1, #76]
     // rearrange the rkeys to their respective new representations
     // REARRANGE_RKEY_0
-    movw r3, #0x0055
-    movt r3, #0x0055
-    movw r10, #0x3333
-    movw r11, #0x000f
-    movt r11, #0x000f
-    ldrd r6, r4, [r1]
-    eor r12, r6, r6, lsr #9
-    and r12, r12, r3
-    eor r6, r12
-    eor r6, r6, r12, lsl #9 //SWAPMOVE(r6, r6, 0x00550055, 9);
-    eor r12, r4, r4, lsr #9
-    and r12, r12, r3
-    eor r4, r12
-    eor r4, r4, r12, lsl #9 //SWAPMOVE(r4, r4, 0x00550055, 9);
-    eor r12, r6, r6, lsr #18
-    and r12, r12, r10
-    eor r6, r12
-    eor r6, r6, r12, lsl #18 //SWAPMOVE(r6, r6, 0x3333, 18);
-    eor r12, r4, r4, lsr #18
-    and r12, r12, r10
-    eor r4, r12
-    eor r4, r4, r12, lsl #18 //SWAPMOVE(r4, r4, 0x3333, 18);
-    eor r12, r6, r6, lsr #12
-    and r12, r12, r11
-    eor r6, r12
-    eor r6, r6, r12, lsl #12 //SWAPMOVE(r6, r6, 0x000f000f, 12);
-    eor r12, r4, r4, lsr #12
-    and r12, r12, r11
-    eor r4, r12
-    eor r4, r4, r12, lsl #12 //SWAPMOVE(r4, r4, 0x000f000f, 12);
-    eor r12, r6, r6, lsr #24
-    and r12, r12, #0xff
-    eor r6, r12
-    eor r6, r6, r12, lsl #24 //SWAPMOVE(r6, r6, 0x000000ff, 24);
-    eor r12, r4, r4, lsr #24
-    and r12, r12, #0xff
-    eor r4, r12
-    eor r4, r4, r12, lsl #24 //SWAPMOVE(r4, r4, 0x000000ff, 24);
-    strd r6, r4, [r1]
-    ldrd r6, r4, [r1, #40]
-    eor r12, r6, r6, lsr #9
-    and r12, r12, r3
-    eor r6, r12
-    eor r6, r6, r12, lsl #9 //SWAPMOVE(r6, r6, 0x00550055, 9);
-    eor r12, r4, r4, lsr #9
-    and r12, r12, r3
-    eor r4, r12
-    eor r4, r4, r12, lsl #9 //SWAPMOVE(r4, r4, 0x00550055, 9);
-    eor r12, r6, r6, lsr #18
-    and r12, r12, r10
-    eor r6, r12
-    eor r6, r6, r12, lsl #18 //SWAPMOVE(r6, r6, 0x3333, 18);
-    eor r12, r4, r4, lsr #18
-    and r12, r12, r10
-    eor r4, r12
-    eor r4, r4, r12, lsl #18 //SWAPMOVE(r4, r4, 0x3333, 18);
-    eor r12, r6, r6, lsr #12
-    and r12, r12, r11
-    eor r6, r12
-    eor r6, r6, r12, lsl #12 //SWAPMOVE(r6, r6, 0x000f000f, 12);
-    eor r12, r4, r4, lsr #12
-    and r12, r12, r11
-    eor r4, r12
-    eor r4, r4, r12, lsl #12 //SWAPMOVE(r4, r4, 0x000f000f, 12);
-    eor r12, r6, r6, lsr #24
-    and r12, r12, #0xff
-    eor r6, r12
-    eor r6, r6, r12, lsl #24 //SWAPMOVE(r6, r6, 0x000000ff, 24);
-    eor r12, r4, r4, lsr #24
-    and r12, r12, #0xff
-    eor r4, r12
-    eor r4, r4, r12, lsl #24 //SWAPMOVE(r4, r4, 0x000000ff, 24);
-    strd r6, r4, [r1, #40]
+    movw    r3, #0x0055
+    movt    r3, #0x0055             //r3 <- 0x00550055
+    movw    r10, #0x3333            //r10<- 0x00003333
+    movw    r11, #0x000f
+    movt    r11, #0x000f            //r11<- 0x000f000f
+    ldrd    r6, r4, [r1]
+    eor     r12, r6, r6, lsr #9
+    and     r12, r12, r3
+    eor     r6, r12
+    eor     r6, r6, r12, lsl #9     //SWAPMOVE(r6, r6, 0x00550055, 9);
+    eor     r12, r4, r4, lsr #9
+    and     r12, r12, r3
+    eor     r4, r12
+    eor     r4, r4, r12, lsl #9     //SWAPMOVE(r4, r4, 0x00550055, 9);
+    eor     r12, r6, r6, lsr #18
+    and     r12, r12, r10
+    eor     r6, r12
+    eor     r6, r6, r12, lsl #18    //SWAPMOVE(r6, r6, 0x3333, 18);
+    eor     r12, r4, r4, lsr #18
+    and     r12, r12, r10
+    eor     r4, r12
+    eor     r4, r4, r12, lsl #18    //SWAPMOVE(r4, r4, 0x3333, 18);
+    eor     r12, r6, r6, lsr #12
+    and     r12, r12, r11
+    eor     r6, r12
+    eor     r6, r6, r12, lsl #12    //SWAPMOVE(r6, r6, 0x000f000f, 12);
+    eor     r12, r4, r4, lsr #12
+    and     r12, r12, r11
+    eor     r4, r12
+    eor     r4, r4, r12, lsl #12    //SWAPMOVE(r4, r4, 0x000f000f, 12);
+    eor     r12, r6, r6, lsr #24
+    and     r12, r12, #0xff
+    eor     r6, r12
+    eor     r6, r6, r12, lsl #24    //SWAPMOVE(r6, r6, 0x000000ff, 24);
+    eor     r12, r4, r4, lsr #24
+    and     r12, r12, #0xff
+    eor     r4, r12
+    eor     r4, r4, r12, lsl #24    //SWAPMOVE(r4, r4, 0x000000ff, 24);
+    strd    r6, r4, [r1]
+    ldrd    r6, r4, [r1, #40]
+    eor     r12, r6, r6, lsr #9
+    and     r12, r12, r3
+    eor     r6, r12
+    eor     r6, r6, r12, lsl #9     //SWAPMOVE(r6, r6, 0x00550055, 9);
+    eor     r12, r4, r4, lsr #9
+    and     r12, r12, r3
+    eor     r4, r12
+    eor     r4, r4, r12, lsl #9     //SWAPMOVE(r4, r4, 0x00550055, 9);
+    eor     r12, r6, r6, lsr #18
+    and     r12, r12, r10
+    eor     r6, r12
+    eor     r6, r6, r12, lsl #18    //SWAPMOVE(r6, r6, 0x3333, 18);
+    eor     r12, r4, r4, lsr #18
+    and     r12, r12, r10
+    eor     r4, r12
+    eor     r4, r4, r12, lsl #18    //SWAPMOVE(r4, r4, 0x3333, 18);
+    eor     r12, r6, r6, lsr #12
+    and     r12, r12, r11
+    eor     r6, r12
+    eor     r6, r6, r12, lsl #12    //SWAPMOVE(r6, r6, 0x000f000f, 12);
+    eor     r12, r4, r4, lsr #12
+    and     r12, r12, r11
+    eor     r4, r12
+    eor     r4, r4, r12, lsl #12    //SWAPMOVE(r4, r4, 0x000f000f, 12);
+    eor     r12, r6, r6, lsr #24
+    and     r12, r12, #0xff
+    eor     r6, r12
+    eor     r6, r6, r12, lsl #24    //SWAPMOVE(r6, r6, 0x000000ff, 24);
+    eor     r12, r4, r4, lsr #24
+    and     r12, r12, #0xff
+    eor     r4, r12
+    eor     r4, r4, r12, lsl #24    //SWAPMOVE(r4, r4, 0x000000ff, 24);
+    str.w   r6, [r1, #40]
+    str.w   r4, [r1, #44]
     // REARRANGE_RKEY_1
-    movw r3, #0x1111
-    movt r3, #0x1111
-    movw r10, #0x0303
-    movt r10, #0x0303
-    ldrd r5, r7, [r1, #8]
-    eor r8, r7, r7, lsr #3
-    and r8, r8, r3
-    eor r7, r8
-    eor r7, r7, r8, lsl #3 //SWAPMOVE(r7, r7, 0x11111111, 3);
-    eor r8, r5, r5, lsr #3
-    and r8, r8, r3
-    eor r5, r8
-    eor r5, r5, r8, lsl #3 //SWAPMOVE(r5, r5, 0x11111111, 3);
-    eor r8, r7, r7, lsr #6
-    and r8, r8, r10
-    eor r7, r8
-    eor r7, r7, r8, lsl #6 //SWAPMOVE(r7, r7, 0x03030303, 6);
-    eor r8, r5, r5, lsr #6
-    and r8, r8, r10
-    eor r5, r8
-    eor r5, r5, r8, lsl #6 //SWAPMOVE(r5, r5, 0x03030303, 6);
-    eor r8, r7, r7, lsr #12
-    and r8, r8, r11
-    eor r7, r8
-    eor r7, r7, r8, lsl #12 //SWAPMOVE(r7, r7, 0x000f000f, 12);
-    eor r8, r5, r5, lsr #12
-    and r8, r8, r11
-    eor r5, r8
-    eor r5, r5, r8, lsl #12 //SWAPMOVE(r5, r5, 0x000f000f, 12);
-    eor r8, r7, r7, lsr #24
-    and r8, r8, #0xff
-    eor r7, r8
-    eor r7, r7, r8, lsl #24 //SWAPMOVE(r7, r7, 0x000000ff, 24);
-    eor r8, r5, r5, lsr #24
-    and r8, r8, #0xff
-    eor r5, r8
-    eor r5, r5, r8, lsl #24 //SWAPMOVE(r5, r5, 0x000000ff, 24);
-    strd r5, r7, [r1, #8]
-    ldrd r5, r7, [r1, #48]
-    eor r8, r7, r7, lsr #3
-    and r8, r8, r3
-    eor r7, r8
-    eor r7, r7, r8, lsl #3 //SWAPMOVE(r7, r7, 0x11111111, 3);
-    eor r8, r5, r5, lsr #3
-    and r8, r8, r3
-    eor r5, r8
-    eor r5, r5, r8, lsl #3 //SWAPMOVE(r5, r5, 0x11111111, 3);
-    eor r8, r7, r7, lsr #6
-    and r8, r8, r10
-    eor r7, r8
-    eor r7, r7, r8, lsl #6 //SWAPMOVE(r7, r7, 0x03030303, 6);
-    eor r8, r5, r5, lsr #6
-    and r8, r8, r10
-    eor r5, r8
-    eor r5, r5, r8, lsl #6 //SWAPMOVE(r5, r5, 0x03030303, 6);
-    eor r8, r7, r7, lsr #12
-    and r8, r8, r11
-    eor r7, r8
-    eor r7, r7, r8, lsl #12 //SWAPMOVE(r7, r7, 0x000f000f, 12);
-    eor r8, r5, r5, lsr #12
-    and r8, r8, r11
-    eor r5, r8
-    eor r5, r5, r8, lsl #12 //SWAPMOVE(r5, r5, 0x000f000f, 12);
-    eor r8, r7, r7, lsr #24
-    and r8, r8, #0xff
-    eor r7, r8
-    eor r7, r7, r8, lsl #24 //SWAPMOVE(r7, r7, 0x000000ff, 24);
-    eor r8, r5, r5, lsr #24
-    and r8, r8, #0xff
-    eor r5, r8
-    eor r5, r5, r8, lsl #24 //SWAPMOVE(r5, r5, 0x000000ff, 24);
-    strd r5, r7, [r1, #48]
+    movw    r3, #0x1111
+    movt    r3, #0x1111
+    movw    r10, #0x0303
+    movt    r10, #0x0303
+    ldrd    r5, r7, [r1, #8]
+    eor     r8, r7, r7, lsr #3
+    and     r8, r8, r3
+    eor     r7, r8
+    eor     r7, r7, r8, lsl #3      //SWAPMOVE(r7, r7, 0x11111111, 3);
+    eor     r8, r5, r5, lsr #3
+    and     r8, r8, r3
+    eor     r5, r8
+    eor     r5, r5, r8, lsl #3      //SWAPMOVE(r5, r5, 0x11111111, 3);
+    eor     r8, r7, r7, lsr #6
+    and     r8, r8, r10
+    eor     r7, r8
+    eor     r7, r7, r8, lsl #6      //SWAPMOVE(r7, r7, 0x03030303, 6);
+    eor     r8, r5, r5, lsr #6
+    and     r8, r8, r10
+    eor     r5, r8
+    eor     r5, r5, r8, lsl #6      //SWAPMOVE(r5, r5, 0x03030303, 6);
+    eor     r8, r7, r7, lsr #12
+    and     r8, r8, r11
+    eor     r7, r8
+    eor     r7, r7, r8, lsl #12     //SWAPMOVE(r7, r7, 0x000f000f, 12);
+    eor     r8, r5, r5, lsr #12
+    and     r8, r8, r11
+    eor     r5, r8
+    eor     r5, r5, r8, lsl #12     //SWAPMOVE(r5, r5, 0x000f000f, 12);
+    eor     r8, r7, r7, lsr #24
+    and     r8, r8, #0xff
+    eor     r7, r8
+    eor     r7, r7, r8, lsl #24     //SWAPMOVE(r7, r7, 0x000000ff, 24);
+    eor     r8, r5, r5, lsr #24
+    and     r8, r8, #0xff
+    eor     r5, r8
+    eor     r5, r5, r8, lsl #24     //SWAPMOVE(r5, r5, 0x000000ff, 24);
+    ldr.w   r12, [r1, #48]
+    ldr.w   r14, [r1, #52]
+    str.w   r5, [r1, #8]
+    str.w   r7, [r1, #12]
+    eor     r8, r14, r14, lsr #3
+    and     r8, r8, r3
+    eor     r14, r8
+    eor     r14, r14, r8, lsl #3    //SWAPMOVE(r7, r7, 0x11111111, 3);
+    eor     r8, r12, r12, lsr #3
+    and     r8, r8, r3
+    eor     r12, r8
+    eor     r12, r12, r8, lsl #3    //SWAPMOVE(r5, r5, 0x11111111, 3);
+    eor     r8, r14, r14, lsr #6
+    and     r8, r8, r10
+    eor     r14, r8
+    eor     r14, r14, r8, lsl #6    //SWAPMOVE(r7, r7, 0x03030303, 6);
+    eor     r8, r12, r12, lsr #6
+    and     r8, r8, r10
+    eor     r12, r8
+    eor     r12, r12, r8, lsl #6    //SWAPMOVE(r5, r5, 0x03030303, 6);
+    eor     r8, r14, r14, lsr #12
+    and     r8, r8, r11
+    eor     r14, r8
+    eor     r14, r14, r8, lsl #12   //SWAPMOVE(r7, r7, 0x000f000f, 12);
+    eor     r8, r12, r12, lsr #12
+    and     r8, r8, r11
+    eor     r12, r8
+    eor     r12, r12, r8, lsl #12   //SWAPMOVE(r5, r5, 0x000f000f, 12);
+    eor     r8, r14, r14, lsr #24
+    and     r8, r8, #0xff
+    eor     r14, r8
+    eor     r14, r14, r8, lsl #24   //SWAPMOVE(r7, r7, 0x000000ff, 24);
+    eor     r8, r12, r12, lsr #24
+    and     r8, r8, #0xff
+    eor     r12, r8
+    eor     r12, r12, r8, lsl #24   //SWAPMOVE(r5, r5, 0x000000ff, 24);
+    str.w   r12, [r1, #48]
+    str.w   r14, [r1, #52]
     // REARRANGE_RKEY_2
-    movw r3, #0xaaaa
-    movw r10, #0x3333
-    movw r11, #0xf0f0
-    ldrd r5, r7, [r1, #16]
-    eor r8, r7, r7, lsr #15
-    and r8, r8, r3
-    eor r7, r8
-    eor r7, r7, r8, lsl #15 //SWAPMOVE(r7, r7, 0x0000aaaa, 15);
-    eor r8, r5, r5, lsr #15
-    and r8, r8, r3
-    eor r5, r8
-    eor r5, r5, r8, lsl #15 //SWAPMOVE(r5, r5, 0x0000aaaa, 15);
-    eor r8, r7, r7, lsr #18
-    and r8, r8, r10
-    eor r7, r8
-    eor r7, r7, r8, lsl #18 //SWAPMOVE(r7, r7, 0x00003333, 18);
-    eor r8, r5, r5, lsr #18
-    and r8, r8, r10
-    eor r5, r8
-    eor r5, r5, r8, lsl #18 //SWAPMOVE(r5, r5, 0x00003333, 18);
-    eor r8, r7, r7, lsr #12
-    and r8, r8, r11
-    eor r7, r8
-    eor r7, r7, r8, lsl #12 //SWAPMOVE(r7, r7, 0x000f000f, 12);
-    eor r8, r5, r5, lsr #12
-    and r8, r8, r11
-    eor r5, r8
-    eor r5, r5, r8, lsl #12 //SWAPMOVE(r5, r5, 0x000f000f, 12);
-    eor r8, r7, r7, lsr #24
-    and r8, r8, #0xff
-    eor r7, r8
-    eor r7, r7, r8, lsl #24 //SWAPMOVE(r7, r7, 0x00000ff, 24);
-    eor r8, r5, r5, lsr #24
-    and r8, r8, #0xff
-    eor r5, r8
-    eor r5, r5, r8, lsl #24 //SWAPMOVE(r5, r5, 0x000000ff, 24);
-    strd r5, r7, [r1, #16]
-    ldrd r5, r7, [r1, #56]
-    eor r8, r7, r7, lsr #15
-    and r8, r8, r3
-    eor r7, r8
-    eor r7, r7, r8, lsl #15 //SWAPMOVE(r7, r7, 0x0000aaaa, 15);
-    eor r8, r5, r5, lsr #15
-    and r8, r8, r3
-    eor r5, r8
-    eor r5, r5, r8, lsl #15 //SWAPMOVE(r5, r5, 0x0000aaaa, 15);
-    eor r8, r7, r7, lsr #18
-    and r8, r8, r10
-    eor r7, r8
-    eor r7, r7, r8, lsl #18 //SWAPMOVE(r7, r7, 0x00003333, 18);
-    eor r8, r5, r5, lsr #18
-    and r8, r8, r10
-    eor r5, r8
-    eor r5, r5, r8, lsl #18 //SWAPMOVE(r5, r5, 0x00003333, 18);
-    eor r8, r7, r7, lsr #12
-    and r8, r8, r11
-    eor r7, r8
-    eor r7, r7, r8, lsl #12 //SWAPMOVE(r7, r7, 0x000f000f, 12);
-    eor r8, r5, r5, lsr #12
-    and r8, r8, r11
-    eor r5, r8
-    eor r5, r5, r8, lsl #12 //SWAPMOVE(r5, r5, 0x000f000f, 12);
-    eor r8, r7, r7, lsr #24
-    and r8, r8, #0xff
-    eor r7, r8
-    eor r7, r7, r8, lsl #24 //SWAPMOVE(r7, r7, 0x000000ff, 24);
-    eor r8, r5, r5, lsr #24
-    and r8, r8, #0xff
-    eor r5, r8
-    eor r5, r5, r8, lsl #24 //SWAPMOVE(r5, r5, 0x000000ff, 24);
-    strd r5, r7, [r1, #56]
+    movw    r3, #0xaaaa
+    movw    r10, #0x3333
+    movw    r11, #0xf0f0
+    ldrd    r5, r7, [r1, #16]
+    eor     r8, r7, r7, lsr #15
+    and     r8, r8, r3
+    eor     r7, r8
+    eor     r7, r7, r8, lsl #15     //SWAPMOVE(r7, r7, 0x0000aaaa, 15);
+    eor     r8, r5, r5, lsr #15
+    and     r8, r8, r3
+    eor     r5, r8
+    eor     r5, r5, r8, lsl #15     //SWAPMOVE(r5, r5, 0x0000aaaa, 15);
+    eor     r8, r7, r7, lsr #18
+    and     r8, r8, r10
+    eor     r7, r8
+    eor     r7, r7, r8, lsl #18     //SWAPMOVE(r7, r7, 0x00003333, 18);
+    eor     r8, r5, r5, lsr #18
+    and     r8, r8, r10
+    eor     r5, r8
+    eor     r5, r5, r8, lsl #18     //SWAPMOVE(r5, r5, 0x00003333, 18);
+    eor     r8, r7, r7, lsr #12
+    and     r8, r8, r11
+    eor     r7, r8
+    eor     r7, r7, r8, lsl #12     //SWAPMOVE(r7, r7, 0x000f000f, 12);
+    eor     r8, r5, r5, lsr #12
+    and     r8, r8, r11
+    eor     r5, r8
+    eor     r5, r5, r8, lsl #12     //SWAPMOVE(r5, r5, 0x000f000f, 12);
+    eor     r8, r7, r7, lsr #24
+    and     r8, r8, #0xff
+    eor     r7, r8
+    eor     r7, r7, r8, lsl #24     //SWAPMOVE(r7, r7, 0x00000ff, 24);
+    eor     r8, r5, r5, lsr #24
+    and     r8, r8, #0xff
+    eor     r5, r8
+    eor     r5, r5, r8, lsl #24     //SWAPMOVE(r5, r5, 0x000000ff, 24);
+    strd    r5, r7, [r1, #16]
+    ldrd    r5, r7, [r1, #56]
+    eor     r8, r7, r7, lsr #15
+    and     r8, r8, r3
+    eor     r7, r8
+    eor     r7, r7, r8, lsl #15     //SWAPMOVE(r7, r7, 0x0000aaaa, 15);
+    eor     r8, r5, r5, lsr #15
+    and     r8, r8, r3
+    eor     r5, r8
+    eor     r5, r5, r8, lsl #15     //SWAPMOVE(r5, r5, 0x0000aaaa, 15);
+    eor     r8, r7, r7, lsr #18
+    and     r8, r8, r10
+    eor     r7, r8
+    eor     r7, r7, r8, lsl #18     //SWAPMOVE(r7, r7, 0x00003333, 18);
+    eor     r8, r5, r5, lsr #18
+    and     r8, r8, r10
+    eor     r5, r8
+    eor     r5, r5, r8, lsl #18     //SWAPMOVE(r5, r5, 0x00003333, 18);
+    eor     r8, r7, r7, lsr #12
+    and     r8, r8, r11
+    eor     r7, r8
+    eor     r7, r7, r8, lsl #12     //SWAPMOVE(r7, r7, 0x000f000f, 12);
+    eor     r8, r5, r5, lsr #12
+    and     r8, r8, r11
+    eor     r5, r8
+    eor     r5, r5, r8, lsl #12     //SWAPMOVE(r5, r5, 0x000f000f, 12);
+    eor     r8, r7, r7, lsr #24
+    and     r8, r8, #0xff
+    eor     r7, r8
+    eor     r7, r7, r8, lsl #24     //SWAPMOVE(r7, r7, 0x000000ff, 24);
+    eor     r8, r5, r5, lsr #24
+    and     r8, r8, #0xff
+    eor     r5, r8
+    eor     r5, r5, r8, lsl #24     //SWAPMOVE(r5, r5, 0x000000ff, 24);
+    str.w   r5, [r1, #56]
+    str.w   r7, [r1, #60]
     // REARRANGE_RKEY_3
-    movw r3, #0x0a0a
-    movt r3, #0x0a0a
-    movw r10, #0x00cc
-    movt r10, #0x00cc
-    ldrd r5, r7, [r1, #24]
-    eor r8, r7, r7, lsr #3
-    and r8, r8, r3
-    eor r7, r8
-    eor r7, r7, r8, lsl #3 //SWAPMOVE(r7, r7, 0x0a0a0a0a, 3);
-    eor r8, r5, r5, lsr #3
-    and r8, r8, r3
-    eor r5, r8
-    eor r5, r5, r8, lsl #3 //SWAPMOVE(r5, r5, 0x0a0a0a0a, 3);
-    eor r8, r7, r7, lsr #6
-    and r8, r8, r10
-    eor r7, r8
-    eor r7, r7, r8, lsl #6 //SWAPMOVE(r7, r7, 0x00cc00cc, 6);
-    eor r8, r5, r5, lsr #6
-    and r8, r8, r10
-    eor r5, r8
-    eor r5, r5, r8, lsl #6 //SWAPMOVE(r5, r5, 0x00cc00cc, 6);
-    eor r8, r7, r7, lsr #12
-    and r8, r8, r11
-    eor r7, r8
-    eor r7, r7, r8, lsl #12 //SWAPMOVE(r7, r7, 0x000f000f, 12);
-    eor r8, r5, r5, lsr #12
-    and r8, r8, r11
-    eor r5, r8
-    eor r5, r5, r8, lsl #12 //SWAPMOVE(r5, r5, 0x000f000f, 12);
-    eor r8, r7, r7, lsr #24
-    and r8, r8, #0xff
-    eor r7, r8
-    eor r7, r7, r8, lsl #24 //SWAPMOVE(r7, r7, 0x000000ff, 24);
-    eor r8, r5, r5, lsr #24
-    and r8, r8, #0xff
-    eor r5, r8
-    eor r5, r5, r8, lsl #24 //SWAPMOVE(r5, r5, 0x000000ff, 24);
-    strd r5, r7, [r1, #24]
-    ldrd r5, r7, [r1, #64]
-    eor r8, r7, r7, lsr #3
-    and r8, r8, r3
-    eor r7, r8
-    eor r7, r7, r8, lsl #3 //SWAPMOVE(r7, r7, 0x0a0a0a0a, 3);
-    eor r8, r5, r5, lsr #3
-    and r8, r8, r3
-    eor r5, r8
-    eor r5, r5, r8, lsl #3 //SWAPMOVE(r5, r5, 0x0a0a0a0a, 3);
-    eor r8, r7, r7, lsr #6
-    and r8, r8, r10
-    eor r7, r8
-    eor r7, r7, r8, lsl #6 //SWAPMOVE(r7, r7, 0x00cc00cc, 6);
-    eor r8, r5, r5, lsr #6
-    and r8, r8, r10
-    eor r5, r8
-    eor r5, r5, r8, lsl #6 //SWAPMOVE(r5, r5, 0x00cc00cc, 6);
-    eor r8, r7, r7, lsr #12
-    and r8, r8, r11
-    eor r7, r8
-    eor r7, r7, r8, lsl #12 //SWAPMOVE(r7, r7, 0x000f000f, 12);
-    eor r8, r5, r5, lsr #12
-    and r8, r8, r11
-    eor r5, r8
-    eor r5, r5, r8, lsl #12 //SWAPMOVE(r5, r5, 0x000f000f, 12);
-    eor r8, r7, r7, lsr #24
-    and r8, r8, #0xff
-    eor r7, r8
-    eor r7, r7, r8, lsl #24 //SWAPMOVE(r7, r7, 0x0000ff00, 24);
-    eor r8, r5, r5, lsr #24
-    and r8, r8, #0xff
-    eor r5, r8
-    eor r5, r5, r8, lsl #24 //SWAPMOVE(r5, r5, 0x0000ff00, 24);
-    strd r5, r7, [r1, #64]
+    movw    r3, #0x0a0a
+    movt    r3, #0x0a0a             //r3 <- 0x0a0a0a0a
+    movw    r10, #0x00cc
+    movt    r10, #0x00cc            //r10<- 0x00cc00cc
+    ldrd    r5, r7, [r1, #24]
+    eor     r8, r7, r7, lsr #3
+    and     r8, r8, r3
+    eor     r7, r8
+    eor     r7, r7, r8, lsl #3      //SWAPMOVE(r7, r7, 0x0a0a0a0a, 3);
+    eor     r8, r5, r5, lsr #3
+    and     r8, r8, r3
+    eor     r5, r8
+    eor     r5, r5, r8, lsl #3      //SWAPMOVE(r5, r5, 0x0a0a0a0a, 3);
+    eor     r8, r7, r7, lsr #6
+    and     r8, r8, r10
+    eor     r7, r8
+    eor     r7, r7, r8, lsl #6      //SWAPMOVE(r7, r7, 0x00cc00cc, 6);
+    eor     r8, r5, r5, lsr #6
+    and     r8, r8, r10
+    eor     r5, r8
+    eor     r5, r5, r8, lsl #6      //SWAPMOVE(r5, r5, 0x00cc00cc, 6);
+    eor     r8, r7, r7, lsr #12
+    and     r8, r8, r11
+    eor     r7, r8
+    eor     r7, r7, r8, lsl #12     //SWAPMOVE(r7, r7, 0x000f000f, 12);
+    eor     r8, r5, r5, lsr #12
+    and     r8, r8, r11
+    eor     r5, r8
+    eor     r5, r5, r8, lsl #12     //SWAPMOVE(r5, r5, 0x000f000f, 12);
+    eor     r8, r7, r7, lsr #24
+    and     r8, r8, #0xff
+    eor     r7, r8
+    eor     r7, r7, r8, lsl #24     //SWAPMOVE(r7, r7, 0x000000ff, 24);
+    eor     r8, r5, r5, lsr #24
+    and     r8, r8, #0xff
+    eor     r5, r8
+    eor     r5, r5, r8, lsl #24     //SWAPMOVE(r5, r5, 0x000000ff, 24);
+    strd    r5, r7, [r1, #24]
+    ldrd    r5, r7, [r1, #64]
+    eor     r8, r7, r7, lsr #3
+    and     r8, r8, r3
+    eor     r7, r8
+    eor     r7, r7, r8, lsl #3      //SWAPMOVE(r7, r7, 0x0a0a0a0a, 3);
+    eor     r8, r5, r5, lsr #3
+    and     r8, r8, r3
+    eor     r5, r8
+    eor     r5, r5, r8, lsl #3      //SWAPMOVE(r5, r5, 0x0a0a0a0a, 3);
+    eor     r8, r7, r7, lsr #6
+    and     r8, r8, r10
+    eor     r7, r8
+    eor     r7, r7, r8, lsl #6      //SWAPMOVE(r7, r7, 0x00cc00cc, 6);
+    eor     r8, r5, r5, lsr #6
+    and     r8, r8, r10
+    eor     r5, r8
+    eor     r5, r5, r8, lsl #6      //SWAPMOVE(r5, r5, 0x00cc00cc, 6);
+    eor     r8, r7, r7, lsr #12
+    and     r8, r8, r11
+    eor     r7, r8
+    eor     r7, r7, r8, lsl #12     //SWAPMOVE(r7, r7, 0x000f000f, 12);
+    eor     r8, r5, r5, lsr #12
+    and     r8, r8, r11
+    eor     r5, r8
+    eor     r5, r5, r8, lsl #12     //SWAPMOVE(r5, r5, 0x000f000f, 12);
+    eor     r8, r7, r7, lsr #24
+    and     r8, r8, #0xff
+    eor     r7, r8
+    eor     r7, r7, r8, lsl #24     //SWAPMOVE(r7, r7, 0x0000ff00, 24);
+    eor     r8, r5, r5, lsr #24
+    and     r8, r8, #0xff
+    eor     r5, r8
+    eor     r5, r5, r8, lsl #24     //SWAPMOVE(r5, r5, 0x0000ff00, 24);
+    str.w   r5, [r1, #64]
+    str.w   r7, [r1, #68]
     //keyschedule according to the new representations
     // KEY_DOULBE/TRIPLE_UPDATE_0
-    // masks
-    movw r12, #0x3333
-    movt r12, #0x3333
-    mvn r11, r12
-    movw r10, #0x3333
-    movw r9, #0x4444
-    movt r9, #0x5555
-    movw r8, #0x1100
-    movt r8, #0x5555
-    ldrd r4, r5, [r1]
-    and r2, r12, r4, ror #24
-    and r4, r4, r11
-    orr r4, r2, r4, ror #16 //KEY_TRIPLE_UPDATE_1(r4)
-    eor r2, r4, r4, lsr #1
-    and r2, r2, r8
-    eor r4, r4, r2
-    eor r4, r4, r2, lsl #1 //SWAPMOVE(r4, r4, 0x55551100, 1)
-    eor r2, r5, r5, lsr #16
-    and r2, r2, r10
-    eor r5, r5, r2
-    eor r5, r5, r2, lsl #16 //SWAPMOVE(r5, r5, 0x00003333, 16)
-    eor r2, r5, r5, lsr #1
-    and r2, r2, r9
-    eor r5, r5, r2
-    eor r5, r5, r2, lsl #1 //SWAPMOVE(r5, r5, 0x555544444, 1)
-    strd r5, r4, [r1, #80]
-    and r2, r12, r5, ror #24
-    and r5, r5, r11
-    orr r5, r2, r5, ror #16 //KEY_TRIPLE_UPDATE_1(r5)
-    eor r2, r5, r5, lsr #1
-    and r2, r2, r8
-    eor r5, r5, r2
-    eor r5, r5, r2, lsl #1 //SWAPMOVE(r5, r5, 0x55551100, 1)
-    eor r2, r4, r4, lsr #16
-    and r2, r2, r10
-    eor r4, r4, r2
-    eor r4, r4, r2, lsl #16 //SWAPMOVE(r4, r4, 0x00003333, 16)
-    eor r2, r4, r4, lsr #1
-    and r2, r2, r9
-    eor r4, r4, r2
-    eor r4, r4, r2, lsl #1 //SWAPMOVE(r4, r4, 0x555544444, 1)
-    strd r4, r5, [r1, #160]
-    and r2, r12, r4, ror #24
-    and r4, r4, r11
-    orr r4, r2, r4, ror #16 //KEY_TRIPLE_UPDATE_1(r4)
-    eor r2, r4, r4, lsr #1
-    and r2, r2, r8
-    eor r4, r4, r2
-    eor r4, r4, r2, lsl #1 //SWAPMOVE(r4, r4, 0x55551100, 1)
-    eor r2, r5, r5, lsr #16
-    and r2, r2, r10
-    eor r5, r5, r2
-    eor r5, r5, r2, lsl #16 //SWAPMOVE(r5, r5, 0x00003333, 16)
-    eor r2, r5, r5, lsr #1
-    and r2, r2, r9
-    eor r5, r5, r2
-    eor r5, r5, r2, lsl #1 //SWAPMOVE(r5, r5, 0x555544444, 1)
-    strd r5, r4, [r1, #240]
-    ldrd r4, r5, [r1, #40]
-    and r2, r12, r4, ror #24
-    and r4, r4, r11
-    orr r4, r2, r4, ror #16 //KEY_TRIPLE_UPDATE_1(r4)
-    eor r2, r4, r4, lsr #1
-    and r2, r2, r8
-    eor r4, r4, r2
-    eor r4, r4, r2, lsl #1 //SWAPMOVE(r4, r4, 0x55551100, 1)
-    eor r2, r5, r5, lsr #16
-    and r2, r2, r10
-    eor r5, r5, r2
-    eor r5, r5, r2, lsl #16 //SWAPMOVE(r5, r5, 0x00003333, 16)
-    eor r2, r5, r5, lsr #1
-    and r2, r2, r9
-    eor r5, r5, r2
-    eor r5, r5, r2, lsl #1 //SWAPMOVE(r5, r5, 0x555544444, 1)
-    strd r5, r4, [r1, #120]
-    and r2, r12, r5, ror #24
-    and r5, r5, r11
-    orr r5, r2, r5, ror #16 //KEY_TRIPLE_UPDATE_1(r5)
-    eor r2, r5, r5, lsr #1
-    and r2, r2, r8
-    eor r5, r5, r2
-    eor r5, r5, r2, lsl #1 //SWAPMOVE(r5, r5, 0x55551100, 1)
-    eor r2, r4, r4, lsr #16
-    and r2, r2, r10
-    eor r4, r4, r2
-    eor r4, r4, r2, lsl #16 //SWAPMOVE(r4, r4, 0x00003333, 16)
-    eor r2, r4, r4, lsr #1
-    and r2, r2, r9
-    eor r4, r4, r2
-    eor r4, r4, r2, lsl #1 //SWAPMOVE(r4, r4, 0x555544444, 1)
-    strd r4, r5, [r1, #200]
-    and r2, r12, r4, ror #24
-    and r4, r4, r11
-    orr r4, r2, r4, ror #16 //KEY_TRIPLE_UPDATE_1(r4)
-    eor r2, r4, r4, lsr #1
-    and r2, r2, r8
-    eor r4, r4, r2
-    eor r4, r4, r2, lsl #1 //SWAPMOVE(r4, r4, 0x55551100, 1)
-    eor r2, r5, r5, lsr #16
-    and r2, r2, r10
-    eor r5, r5, r2
-    eor r5, r5, r2, lsl #16 //SWAPMOVE(r5, r5, 0x00003333, 16)
-    eor r2, r5, r5, lsr #1
-    and r2, r2, r9
-    eor r5, r5, r2
-    eor r5, r5, r2, lsl #1 //SWAPMOVE(r5, r5, 0x555544444, 1)
-    strd r5, r4, [r1, #280]
+    movw    r10, #0x3333
+    eor     r12, r10, r10, lsl #16
+    mvn     r11, r12
+    movw    r9, #0x4444
+    movt    r9, #0x5555
+    movw    r8, #0x1100
+    movt    r8, #0x5555
+    ldrd    r4, r5, [r1]
+    and     r2, r12, r4, ror #24
+    and     r4, r4, r11
+    orr     r4, r2, r4, ror #16     //KEY_TRIPLE_UPDATE_1(r4)
+    eor     r2, r4, r4, lsr #1
+    and     r2, r2, r8
+    eor     r4, r4, r2
+    eor     r4, r4, r2, lsl #1      //SWAPMOVE(r4, r4, 0x55551100, 1)
+    eor     r2, r5, r5, lsr #16
+    and     r2, r2, r10
+    eor     r5, r5, r2
+    eor     r5, r5, r2, lsl #16     //SWAPMOVE(r5, r5, 0x00003333, 16)
+    eor     r2, r5, r5, lsr #1
+    and     r2, r2, r9
+    eor     r5, r5, r2
+    eor     r5, r5, r2, lsl #1      //SWAPMOVE(r5, r5, 0x555544444, 1)
+    str.w   r5, [r1, #80]
+    str.w   r4, [r1, #84]
+    and     r2, r12, r5, ror #24
+    and     r5, r5, r11
+    orr     r5, r2, r5, ror #16     //KEY_TRIPLE_UPDATE_1(r5)
+    eor     r2, r5, r5, lsr #1
+    and     r2, r2, r8
+    eor     r5, r5, r2
+    eor     r5, r5, r2, lsl #1      //SWAPMOVE(r5, r5, 0x55551100, 1)
+    eor     r2, r4, r4, lsr #16
+    and     r2, r2, r10
+    eor     r4, r4, r2
+    eor     r4, r4, r2, lsl #16     //SWAPMOVE(r4, r4, 0x00003333, 16)
+    eor     r2, r4, r4, lsr #1
+    and     r2, r2, r9
+    eor     r4, r4, r2
+    eor     r4, r4, r2, lsl #1      //SWAPMOVE(r4, r4, 0x555544444, 1)
+    str.w   r4, [r1, #160]
+    str.w   r5, [r1, #164]
+    and     r2, r12, r4, ror #24
+    and     r4, r4, r11
+    orr     r4, r2, r4, ror #16     //KEY_TRIPLE_UPDATE_1(r4)
+    eor     r2, r4, r4, lsr #1
+    and     r2, r2, r8
+    eor     r4, r4, r2
+    eor     r4, r4, r2, lsl #1      //SWAPMOVE(r4, r4, 0x55551100, 1)
+    eor     r2, r5, r5, lsr #16
+    and     r2, r2, r10
+    eor     r5, r5, r2
+    eor     r5, r5, r2, lsl #16     //SWAPMOVE(r5, r5, 0x00003333, 16)
+    eor     r2, r5, r5, lsr #1
+    and     r2, r2, r9
+    eor     r5, r5, r2
+    eor     r5, r5, r2, lsl #1      //SWAPMOVE(r5, r5, 0x555544444, 1)
+    strd    r5, r4, [r1, #240]
+    ldrd    r4, r5, [r1, #40]
+    and     r2, r12, r4, ror #24
+    and     r4, r4, r11
+    orr     r4, r2, r4, ror #16     //KEY_TRIPLE_UPDATE_1(r4)
+    eor     r2, r4, r4, lsr #1
+    and     r2, r2, r8
+    eor     r4, r4, r2
+    eor     r4, r4, r2, lsl #1      //SWAPMOVE(r4, r4, 0x55551100, 1)
+    eor     r2, r5, r5, lsr #16
+    and     r2, r2, r10
+    eor     r5, r5, r2
+    eor     r5, r5, r2, lsl #16     //SWAPMOVE(r5, r5, 0x00003333, 16)
+    eor     r2, r5, r5, lsr #1
+    and     r2, r2, r9
+    eor     r5, r5, r2
+    eor     r5, r5, r2, lsl #1      //SWAPMOVE(r5, r5, 0x555544444, 1)
+    str.w   r5, [r1, #120]
+    str.w   r4, [r1, #124]
+    and     r2, r12, r5, ror #24
+    and     r5, r5, r11
+    orr     r5, r2, r5, ror #16     //KEY_TRIPLE_UPDATE_1(r5)
+    eor     r2, r5, r5, lsr #1
+    and     r2, r2, r8
+    eor     r5, r5, r2
+    eor     r5, r5, r2, lsl #1      //SWAPMOVE(r5, r5, 0x55551100, 1)
+    eor     r2, r4, r4, lsr #16
+    and     r2, r2, r10
+    eor     r4, r4, r2
+    eor     r4, r4, r2, lsl #16     //SWAPMOVE(r4, r4, 0x00003333, 16)
+    eor     r2, r4, r4, lsr #1
+    and     r2, r2, r9
+    eor     r4, r4, r2
+    eor     r4, r4, r2, lsl #1      //SWAPMOVE(r4, r4, 0x555544444, 1)
+    str.w   r4, [r1, #200]
+    str.w   r5, [r1, #204]
+    and     r2, r12, r4, ror #24
+    and     r4, r4, r11
+    orr     r4, r2, r4, ror #16     //KEY_TRIPLE_UPDATE_1(r4)
+    eor     r2, r4, r4, lsr #1
+    and     r2, r2, r8
+    eor     r4, r4, r2
+    eor     r4, r4, r2, lsl #1      //SWAPMOVE(r4, r4, 0x55551100, 1)
+    eor     r2, r5, r5, lsr #16
+    and     r2, r2, r10
+    eor     r5, r5, r2
+    eor     r5, r5, r2, lsl #16     //SWAPMOVE(r5, r5, 0x00003333, 16)
+    eor     r2, r5, r5, lsr #1
+    and     r2, r2, r9
+    eor     r5, r5, r2
+    eor     r5, r5, r2, lsl #1      //SWAPMOVE(r5, r5, 0x555544444, 1)
+    str.w   r5, [r1, #280]
+    str.w   r4, [r1, #284]
     // KEY_DOULBE/TRIPLE_UPDATE_2
     // masks
-    movw r12, #0x0f00
-    movt r12, #0x0f00
-    movw r11, #0x0003
-    movt r11, #0x0003
-    movw r10, #0x003f
-    movt r10, #0x003f
-    lsl r9, r11, #8 //0x03000300
-    movw r8, #0x0007
-    movt r8, #0x0007 
-    movw r7, #0x001f
-    movt r7, #0x001f
-    ldrd r4, r5, [r1, #8]
-    and r2, r9, r4, lsr #6
-    and r3, r4, r10, lsl #8
-    orr r2, r2, r3, lsl #2
-    and r3, r8, r4, lsr #5
-    orr r2, r2, r3
-    and r4, r4, r7
-    orr r4, r2, r4, lsl #3 //KEY_TRIPLE_UPDATE_2(r4)
-    and r2, r12, r5, lsr #4
-    and r3, r5, r12
-    orr r2, r2, r3, lsl #4
-    and r3, r11, r5, lsr #6
-    orr r2, r2, r3
-    and r5, r5, r10
-    orr r5, r2, r5, lsl #2 //KEY_DOUBLE_UPDATE_2(r5)
-    strd r5, r4, [r1, #88]
-    and r2, r9, r5, lsr #6
-    and r3, r5, r10, lsl #8
-    orr r2, r2, r3, lsl #2
-    and r3, r8, r5, lsr #5
-    orr r2, r2, r3
-    and r5, r5, r7
-    orr r5, r2, r5, lsl #3 //KEY_TRIPLE_UPDATE_2(r5)
-    and r2, r12, r4, lsr #4
-    and r3, r4, r12
-    orr r2, r2, r3, lsl #4
-    and r3, r11, r4, lsr #6
-    orr r2, r2, r3
-    and r4, r4, r10
-    orr r4, r2, r4, lsl #2 //KEY_DOUBLE_UPDATE_2(r4)
-    strd r4, r5, [r1, #168]
-    and r2, r9, r4, lsr #6
-    and r3, r4, r10, lsl #8
-    orr r2, r2, r3, lsl #2
-    and r3, r8, r4, lsr #5
-    orr r2, r2, r3
-    and r4, r4, r7
-    orr r4, r2, r4, lsl #3 //KEY_TRIPLE_UPDATE_2(r4)
-    and r2, r12, r5, lsr #4
-    and r3, r5, r12
-    orr r2, r2, r3, lsl #4
-    and r3, r11, r5, lsr #6
-    orr r2, r2, r3
-    and r5, r5, r10
-    orr r5, r2, r5, lsl#2 //KEY_DOUBLE_UPDATE_2(r5)
-    strd r5, r4, [r1, #248]
-    ldrd r4, r5, [r1, #48]
-    and r2, r9, r4, lsr #6
-    and r3, r4, r10, lsl #8
-    orr r2, r2, r3, lsl #2
-    and r3, r8, r4, lsr #5
-    orr r2, r2, r3
-    and r4, r4, r7
-    orr r4, r2, r4, lsl #3 //KEY_TRIPLE_UPDATE_2(r4)
-    and r2, r12, r5, lsr #4
-    and r3, r5, r12
-    orr r2, r2, r3, lsl #4
-    and r3, r11, r5, lsr #6
-    orr r2, r2, r3
-    and r5, r5, r10
-    orr r5, r2, r5, lsl #2 //KEY_DOUBLE_UPDATE_2(r5)
-    strd r5, r4, [r1, #128]
-    and r2, r9, r5, lsr #6
-    and r3, r5, r10, lsl #8
-    orr r2, r2, r3, lsl #2
-    and r3, r8, r5, lsr #5
-    orr r2, r2, r3
-    and r5, r5, r7
-    orr r5, r2, r5, lsl #3 //KEY_TRIPLE_UPDATE_2(r5)
-    and r2, r12, r4, lsr #4
-    and r3, r4, r12
-    orr r2, r2, r3, lsl #4
-    and r3, r11, r4, lsr #6
-    orr r2, r2, r3
-    and r4, r4, r10
-    orr r4, r2, r4, lsl #2 //KEY_DOUBLE_UPDATE_2(r4)
-    strd r4, r5, [r1, #208]
-    and r2, r9, r4, lsr #6
-    and r3, r4, r10, lsl #8
-    orr r2, r2, r3, lsl #2
-    and r3, r8, r4, lsr #5
-    orr r2, r2, r3
-    and r4, r4, r7
-    orr r4, r2, r4, lsl #3 //KEY_TRIPLE_UPDATE_2(r4)
-    and r2, r12, r5, lsr #4
-    and r3, r5, r12
-    orr r2, r2, r3, lsl #4
-    and r3, r11, r5, lsr #6
-    orr r2, r2, r3
-    and r5, r5, r10
-    orr r5, r2, r5, lsl#2 //KEY_DOUBLE_UPDATE_2(r5)
-    strd r5, r4, [r1, #288]
+    movw    r12, #0x0f00
+    movt    r12, #0x0f00
+    movw    r11, #0x0003
+    movt    r11, #0x0003
+    movw    r10, #0x003f
+    movt    r10, #0x003f
+    lsl     r9, r11, #8             //r9 <- 0x03000300
+    and     r8, r10, r10, lsr #3    //r8 <- 0x00070007
+    orr     r7, r8, r8, lsl #2      //r7 <- 0x001f001f
+    ldrd    r4, r5, [r1, #8]
+    and     r2, r9, r4, lsr #6
+    and     r3, r4, r10, lsl #8
+    orr     r2, r2, r3, lsl #2
+    and     r3, r8, r4, lsr #5
+    orr     r2, r2, r3
+    and     r4, r4, r7
+    orr     r4, r2, r4, lsl #3      //KEY_TRIPLE_UPDATE_2(r4)
+    and     r2, r12, r5, lsr #4
+    and     r3, r5, r12
+    orr     r2, r2, r3, lsl #4
+    and     r3, r11, r5, lsr #6
+    orr     r2, r2, r3
+    and     r5, r5, r10
+    orr     r5, r2, r5, lsl #2      //KEY_DOUBLE_UPDATE_2(r5)
+    str.w   r5, [r1, #88]
+    str.w   r4, [r1, #92]
+    and     r2, r9, r5, lsr #6
+    and     r3, r5, r10, lsl #8
+    orr     r2, r2, r3, lsl #2
+    and     r3, r8, r5, lsr #5
+    orr     r2, r2, r3
+    and     r5, r5, r7
+    orr     r5, r2, r5, lsl #3      //KEY_TRIPLE_UPDATE_2(r5)
+    and     r2, r12, r4, lsr #4
+    and     r3, r4, r12
+    orr     r2, r2, r3, lsl #4
+    and     r3, r11, r4, lsr #6
+    orr     r2, r2, r3
+    and     r4, r4, r10
+    orr     r4, r2, r4, lsl #2      //KEY_DOUBLE_UPDATE_2(r4)
+    str.w   r4, [r1, #168]
+    str.w   r5, [r1, #172]
+    and     r2, r9, r4, lsr #6
+    and     r3, r4, r10, lsl #8
+    orr     r2, r2, r3, lsl #2
+    and     r3, r8, r4, lsr #5
+    orr     r2, r2, r3
+    and     r4, r4, r7
+    orr     r4, r2, r4, lsl #3      //KEY_TRIPLE_UPDATE_2(r4)
+    and     r2, r12, r5, lsr #4
+    and     r3, r5, r12
+    orr     r2, r2, r3, lsl #4
+    and     r3, r11, r5, lsr #6
+    orr     r2, r2, r3
+    and     r5, r5, r10
+    orr     r5, r2, r5, lsl#2       //KEY_DOUBLE_UPDATE_2(r5)
+    strd    r5, r4, [r1, #248]
+    ldrd    r4, r5, [r1, #48]
+    and     r2, r9, r4, lsr #6
+    and     r3, r4, r10, lsl #8
+    orr     r2, r2, r3, lsl #2
+    and     r3, r8, r4, lsr #5
+    orr     r2, r2, r3
+    and     r4, r4, r7
+    orr     r4, r2, r4, lsl #3      //KEY_TRIPLE_UPDATE_2(r4)
+    and     r2, r12, r5, lsr #4
+    and     r3, r5, r12
+    orr     r2, r2, r3, lsl #4
+    and     r3, r11, r5, lsr #6
+    orr     r2, r2, r3
+    and     r5, r5, r10
+    orr     r5, r2, r5, lsl #2      //KEY_DOUBLE_UPDATE_2(r5)
+    str.w   r5, [r1, #128]
+    str.w   r4, [r1, #132]
+    and     r2, r9, r5, lsr #6
+    and     r3, r5, r10, lsl #8
+    orr     r2, r2, r3, lsl #2
+    and     r3, r8, r5, lsr #5
+    orr     r2, r2, r3
+    and     r5, r5, r7
+    orr     r5, r2, r5, lsl #3      //KEY_TRIPLE_UPDATE_2(r5)
+    and     r2, r12, r4, lsr #4
+    and     r3, r4, r12
+    orr     r2, r2, r3, lsl #4
+    and     r3, r11, r4, lsr #6
+    orr     r2, r2, r3
+    and     r4, r4, r10
+    orr     r4, r2, r4, lsl #2      //KEY_DOUBLE_UPDATE_2(r4)
+    str.w   r4, [r1, #208]
+    str.w   r5, [r1, #212]
+    and     r2, r9, r4, lsr #6
+    and     r3, r4, r10, lsl #8
+    orr     r2, r2, r3, lsl #2
+    and     r3, r8, r4, lsr #5
+    orr     r2, r2, r3
+    and     r4, r4, r7
+    orr     r4, r2, r4, lsl #3      //KEY_TRIPLE_UPDATE_2(r4)
+    and     r2, r12, r5, lsr #4
+    and     r3, r5, r12
+    orr     r2, r2, r3, lsl #4
+    and     r3, r11, r5, lsr #6
+    orr     r2, r2, r3
+    and     r5, r5, r10
+    orr     r5, r2, r5, lsl#2       //KEY_DOUBLE_UPDATE_2(r5)
+    str.w   r5, [r1, #288]
+    str.w   r4, [r1, #292]
     // KEY_DOULBE/TRIPLE_UPDATE_2
     // masks
-    movw r12, #0x5555
-    movt r12, #0x5555
-    mvn r11, r12
-    ldrd r4, r5, [r1, #16]
-    and r2, r12, r4, ror #24
-    and r4, r11, r4, ror #20
-    orr r4, r4, r2 //KEY_TRIPLE_UPDATE_2(r4)
-    and r2, r11, r5, ror #24
-    and r5, r12, r5, ror #16
-    orr r5, r5, r2 //KEY_DOUBLE_UPDATE_2(r5)
-    strd r5, r4, [r1, #96]
-    and r2, r12, r5, ror #24
-    and r5, r11, r5, ror #20
-    orr r5, r5, r2 //KEY_TRIPLE_UPDATE_2(r5)
-    and r2, r11, r4, ror #24
-    and r4, r12, r4, ror #16
-    orr r4, r4, r2 //KEY_DOUBLE_UPDATE_2(r4)
-    strd r4, r5, [r1, #176]
-    and r2, r12, r4, ror #24
-    and r4, r11, r4, ror #20
-    orr r4, r4, r2 //KEY_TRIPLE_UPDATE_2(r4)
-    and r2, r11, r5, ror #24
-    and r5, r12, r5, ror #16
-    orr r5, r5, r2 //KEY_DOUBLE_UPDATE_2(r5)
-    strd r5, r4, [r1, #256]
-    ldrd r4, r5, [r1, #56]
-    and r2, r12, r4, ror #24
-    and r4, r11, r4, ror #20
-    orr r4, r4, r2 //KEY_TRIPLE_UPDATE_2(r5)
-    and r2, r11, r5, ror #24
-    and r5, r12, r5, ror #16
-    orr r5, r5, r2 //KEY_DOUBLE_UPDATE_2(r4)
-    strd r5, r4, [r1, #136]
-    and r2, r12, r5, ror #24
-    and r5, r11, r5, ror #20
-    orr r5, r5, r2 //KEY_TRIPLE_UPDATE_2(r4)
-    and r2, r11, r4, ror #24
-    and r4, r12, r4, ror #16
-    orr r4, r4, r2 //KEY_DOUBLE_UPDATE_2(r5)
-    strd r4, r5, [r1, #216]
-    and r2, r12, r4, ror #24
-    and r4, r11, r4, ror #20
-    orr r4, r4, r2 //KEY_TRIPLE_UPDATE_2(r5)
-    and r2, r11, r5, ror #24
-    and r5, r12, r5, ror #16
-    orr r5, r5, r2 //KEY_DOUBLE_UPDATE_2(r4)
-    strd r5, r4, [r1, #296]
+    movw    r12, #0x5555
+    movt    r12, #0x5555
+    mvn     r11, r12
+    ldrd    r4, r5, [r1, #16]
+    and     r2, r12, r4, ror #24
+    and     r4, r11, r4, ror #20
+    orr     r4, r4, r2              //KEY_TRIPLE_UPDATE_2(r4)
+    and     r2, r11, r5, ror #24
+    and     r5, r12, r5, ror #16
+    orr     r5, r5, r2              //KEY_DOUBLE_UPDATE_2(r5)
+    str.w   r5, [r1, #96]
+    str.w   r4, [r1, #100]
+    and     r2, r12, r5, ror #24
+    and     r5, r11, r5, ror #20
+    orr     r5, r5, r2              //KEY_TRIPLE_UPDATE_2(r5)
+    and     r2, r11, r4, ror #24
+    and     r4, r12, r4, ror #16
+    orr     r4, r4, r2              //KEY_DOUBLE_UPDATE_2(r4)
+    str.w   r4, [r1, #176]
+    str.w   r5, [r1, #180]
+    and     r2, r12, r4, ror #24
+    and     r4, r11, r4, ror #20
+    orr     r4, r4, r2              //KEY_TRIPLE_UPDATE_2(r4)
+    and     r2, r11, r5, ror #24
+    and     r5, r12, r5, ror #16
+    orr     r5, r5, r2              //KEY_DOUBLE_UPDATE_2(r5)
+    strd    r5, r4, [r1, #256]
+    ldrd    r4, r5, [r1, #56]
+    and     r2, r12, r4, ror #24
+    and     r4, r11, r4, ror #20
+    orr     r4, r4, r2              //KEY_TRIPLE_UPDATE_2(r5)
+    and     r2, r11, r5, ror #24
+    and     r5, r12, r5, ror #16
+    orr     r5, r5, r2              //KEY_DOUBLE_UPDATE_2(r4)
+    str.w   r5, [r1, #136]
+    str.w   r4, [r1, #140]
+    and     r2, r12, r5, ror #24
+    and     r5, r11, r5, ror #20
+    orr     r5, r5, r2              //KEY_TRIPLE_UPDATE_2(r4)
+    and     r2, r11, r4, ror #24
+    and     r4, r12, r4, ror #16
+    orr     r4, r4, r2              //KEY_DOUBLE_UPDATE_2(r5)
+    str.w   r4, [r1, #216]
+    str.w   r5, [r1, #220]
+    and     r2, r12, r4, ror #24
+    and     r4, r11, r4, ror #20
+    orr     r4, r4, r2              //KEY_TRIPLE_UPDATE_2(r5)
+    and     r2, r11, r5, ror #24
+    and     r5, r12, r5, ror #16
+    orr     r5, r5, r2              //KEY_DOUBLE_UPDATE_2(r4)
+    str.w   r5, [r1, #296]
+    str.w   r4, [r1, #300]
     // KEY_DOULBE/TRIPLE_UPDATE_3
     // masks
-    movw r12, #0x0707
-    movt r12, #0x0707
-    movw r11, #0xc0c0
-    movw r10, #0x3030
-    movw r9, #0x0303
-    movt r9, #0x0303
-    lsl r8, r12, #4
-    movw r7, #0x1010
-    movt r7, #0x1010
-    movw r6, #0xf0f0
-    ldrd r4, r5, [r1, #24]
-    and r2, r10, r4, lsr #18
-    and r3, r4, r7, lsr #4
-    orr r2, r2, r3, lsl #3
-    and r3, r11, r4, lsr #14
-    orr r2, r2, r3
-    and r3, r4, r12, lsr #11
-    orr r2, r2, r3, lsl #15
-    and r3, r12, r4, lsr #1
-    orr r2, r2, r3
-    and r4, r4, r7, lsr #16
-    orr r4, r2, r4, lsl #19 //KEY_TRIPLE_UPDATE_4(r4)
-    and r2, r9, r5, lsr #2
-    and r3, r9, r5
-    orr r2, r2, r3, lsl #2
-    and r3, r8, r5, lsr #1
-    orr r2, r2, r3
-    and r5, r5, r7
-    orr r5, r2, r5, lsl #3 //KEY_DOUBLE_UPDATE_4(r5)
-    strd r5, r4, [r1, #104]
-    and r2, r10, r5, lsr #18
-    and r3, r5, r7, lsr #4
-    orr r2, r2, r3, lsl #3
-    and r3, r11, r5, lsr #14
-    orr r2, r2, r3
-    and r3, r5, r12, lsr #11
-    orr r2, r2, r3, lsl #15
-    and r3, r12, r5, lsr #1
-    orr r2, r2, r3
-    and r5, r5, r7, lsr #16
-    orr r5, r2, r5, lsl #19 //KEY_TRIPLE_UPDATE_4(r5)
-    and r2, r9, r4, lsr #2
-    and r3, r9, r4
-    orr r2, r2, r3, lsl #2
-    and r3, r8, r4, lsr #1
-    orr r2, r2, r3
-    and r4, r4, r7
-    orr r4, r2, r4, lsl #3 //KEY_DOUBLE_UPDATE_4(r4)
-    strd r4, r5, [r1, #184]
-    and r2, r10, r4, lsr #18
-    and r3, r4, r7, lsr #4
-    orr r2, r2, r3, lsl #3
-    and r3, r11, r4, lsr #14
-    orr r2, r2, r3
-    and r3, r4, r12, lsr #11
-    orr r2, r2, r3, lsl #15
-    and r3, r12, r4, lsr #1
-    orr r2, r2, r3
-    and r4, r4, r7, lsr #16
-    orr r4, r2, r4, lsl #19 //KEY_TRIPLE_UPDATE_4(r4)
-    and r2, r9, r5, lsr #2
-    and r3, r9, r5
-    orr r2, r2, r3, lsl #2
-    and r3, r8, r5, lsr #1
-    orr r2, r2, r3
-    and r5, r5, r7
-    orr r5, r2, r5, lsl #3 //KEY_DOUBLE_UPDATE_4(r5)
-    strd r5, r4, [r1, #264]
-    ldrd r4, r5, [r1, #64]
-    and r2, r10, r4, lsr #18
-    and r3, r4, r7, lsr #4
-    orr r2, r2, r3, lsl #3
-    and r3, r11, r4, lsr #14
-    orr r2, r2, r3
-    and r3, r4, r12, lsr #11
-    orr r2, r2, r3, lsl #15
-    and r3, r12, r4, lsr #1
-    orr r2, r2, r3
-    and r4, r4, r7, lsr #16
-    orr r4, r2, r4, lsl #19 //KEY_TRIPLE_UPDATE_4(r4)
-    and r2, r9, r5, lsr #2
-    and r3, r9, r5
-    orr r2, r2, r3, lsl #2
-    and r3, r8, r5, lsr #1
-    orr r2, r2, r3
-    and r5, r5, r7
-    orr r5, r2, r5, lsl #3 //KEY_DOUBLE_UPDATE_4(r5)
-    strd r5, r4, [r1, #144]
-    and r2, r10, r5, lsr #18
-    and r3, r5, r7, lsr #4
-    orr r2, r2, r3, lsl #3
-    and r3, r11, r5, lsr #14
-    orr r2, r2, r3
-    and r3, r5, r12, lsr #11
-    orr r2, r2, r3, lsl #15
-    and r3, r12, r5, lsr #1
-    orr r2, r2, r3
-    and r5, r5, r7, lsr #16
-    orr r5, r2, r5, lsl #19 //KEY_TRIPLE_UPDATE_4(r5)
-    and r2, r9, r4, lsr #2
-    and r3, r9, r4
-    orr r2, r2, r3, lsl #2
-    and r3, r8, r4, lsr #1
-    orr r2, r2, r3
-    and r4, r4, r7
-    orr r4, r2, r4, lsl #3 //KEY_DOUBLE_UPDATE_4(r4)
-    strd r4, r5, [r1, #224]
-    and r2, r10, r4, lsr #18
-    and r3, r4, r7, lsr #4
-    orr r2, r2, r3, lsl #3
-    and r3, r11, r4, lsr #14
-    orr r2, r2, r3
-    and r3, r4, r12, lsr #11
-    orr r2, r2, r3, lsl #15
-    and r3, r12, r4, lsr #1
-    orr r2, r2, r3
-    and r4, r4, r7, lsr #16
-    orr r4, r2, r4, lsl #19 //KEY_TRIPLE_UPDATE_4(r4)
-    and r2, r9, r5, lsr #2
-    and r3, r9, r5
-    orr r2, r2, r3, lsl #2
-    and r3, r8, r5, lsr #1
-    orr r2, r2, r3
-    and r5, r5, r7
-    orr r5, r2, r5, lsl #3 //KEY_DOUBLE_UPDATE_4(r5)
-    strd r5, r4, [r1, #304]
+    orr     r12, r8, r8, lsl #8     //r12<- 0x07070707
+    movw    r11, #0xc0c0
+    movw    r10, #0x3030
+    and     r9, r12, r12, lsr #1    //r9 <- 0x03030303
+    lsl     r8, r12, #4
+    eor     r7, r8, r9, lsl #5
+    movw    r6, #0xf0f0
+    ldrd    r4, r5, [r1, #24]
+    and     r2, r10, r4, lsr #18
+    and     r3, r4, r7, lsr #4
+    orr     r2, r2, r3, lsl #3
+    and     r3, r11, r4, lsr #14
+    orr     r2, r2, r3
+    and     r3, r4, r12, lsr #11
+    orr     r2, r2, r3, lsl #15
+    and     r3, r12, r4, lsr #1
+    orr     r2, r2, r3
+    and     r4, r4, r7, lsr #16
+    orr     r4, r2, r4, lsl #19     //KEY_TRIPLE_UPDATE_4(r4)
+    and     r2, r9, r5, lsr #2
+    and     r3, r9, r5
+    orr     r2, r2, r3, lsl #2
+    and     r3, r8, r5, lsr #1
+    orr     r2, r2, r3
+    and     r5, r5, r7
+    orr     r5, r2, r5, lsl #3      //KEY_DOUBLE_UPDATE_4(r5)
+    str.w   r5, [r1, #104]
+    str.w   r4, [r1, #108]
+    and     r2, r10, r5, lsr #18
+    and     r3, r5, r7, lsr #4
+    orr     r2, r2, r3, lsl #3
+    and     r3, r11, r5, lsr #14
+    orr     r2, r2, r3
+    and     r3, r5, r12, lsr #11
+    orr     r2, r2, r3, lsl #15
+    and     r3, r12, r5, lsr #1
+    orr     r2, r2, r3
+    and     r5, r5, r7, lsr #16
+    orr     r5, r2, r5, lsl #19     //KEY_TRIPLE_UPDATE_4(r5)
+    and     r2, r9, r4, lsr #2
+    and     r3, r9, r4
+    orr     r2, r2, r3, lsl #2
+    and     r3, r8, r4, lsr #1
+    orr     r2, r2, r3
+    and     r4, r4, r7
+    orr     r4, r2, r4, lsl #3      //KEY_DOUBLE_UPDATE_4(r4)
+    str.w   r4, [r1, #184]
+    str.w   r5, [r1, #188]
+    and     r2, r10, r4, lsr #18
+    and     r3, r4, r7, lsr #4
+    orr     r2, r2, r3, lsl #3
+    and     r3, r11, r4, lsr #14
+    orr     r2, r2, r3
+    and     r3, r4, r12, lsr #11
+    orr     r2, r2, r3, lsl #15
+    and     r3, r12, r4, lsr #1
+    orr     r2, r2, r3
+    and     r4, r4, r7, lsr #16
+    orr     r4, r2, r4, lsl #19     //KEY_TRIPLE_UPDATE_4(r4)
+    and     r2, r9, r5, lsr #2
+    and     r3, r9, r5
+    orr     r2, r2, r3, lsl #2
+    and     r3, r8, r5, lsr #1
+    orr     r2, r2, r3
+    and     r5, r5, r7
+    orr     r5, r2, r5, lsl #3      //KEY_DOUBLE_UPDATE_4(r5)
+    strd    r5, r4, [r1, #264]
+    ldrd    r4, r5, [r1, #64]
+    and     r2, r10, r4, lsr #18
+    and     r3, r4, r7, lsr #4
+    orr     r2, r2, r3, lsl #3
+    and     r3, r11, r4, lsr #14
+    orr     r2, r2, r3
+    and     r3, r4, r12, lsr #11
+    orr     r2, r2, r3, lsl #15
+    and     r3, r12, r4, lsr #1
+    orr     r2, r2, r3
+    and     r4, r4, r7, lsr #16
+    orr     r4, r2, r4, lsl #19     //KEY_TRIPLE_UPDATE_4(r4)
+    and     r2, r9, r5, lsr #2
+    and     r3, r9, r5
+    orr     r2, r2, r3, lsl #2
+    and     r3, r8, r5, lsr #1
+    orr     r2, r2, r3
+    and     r5, r5, r7
+    orr     r5, r2, r5, lsl #3      //KEY_DOUBLE_UPDATE_4(r5)
+    str.w   r5, [r1, #144]
+    str.w   r4, [r1, #148]
+    and     r2, r10, r5, lsr #18
+    and     r3, r5, r7, lsr #4
+    orr     r2, r2, r3, lsl #3
+    and     r3, r11, r5, lsr #14
+    orr     r2, r2, r3
+    and     r3, r5, r12, lsr #11
+    orr     r2, r2, r3, lsl #15
+    and     r3, r12, r5, lsr #1
+    orr     r2, r2, r3
+    and     r5, r5, r7, lsr #16
+    orr     r5, r2, r5, lsl #19     //KEY_TRIPLE_UPDATE_4(r5)
+    and     r2, r9, r4, lsr #2
+    and     r3, r9, r4
+    orr     r2, r2, r3, lsl #2
+    and     r3, r8, r4, lsr #1
+    orr     r2, r2, r3
+    and     r4, r4, r7
+    orr     r4, r2, r4, lsl #3      //KEY_DOUBLE_UPDATE_4(r4)
+    str.w   r4, [r1, #224]
+    str.w   r5, [r1, #228]
+    and     r2, r10, r4, lsr #18
+    and     r3, r4, r7, lsr #4
+    orr     r2, r2, r3, lsl #3
+    and     r3, r11, r4, lsr #14
+    orr     r2, r2, r3
+    and     r3, r4, r12, lsr #11
+    orr     r2, r2, r3, lsl #15
+    and     r3, r12, r4, lsr #1
+    orr     r2, r2, r3
+    and     r4, r4, r7, lsr #16
+    orr     r4, r2, r4, lsl #19     //KEY_TRIPLE_UPDATE_4(r4)
+    and     r2, r9, r5, lsr #2
+    and     r3, r9, r5
+    orr     r2, r2, r3, lsl #2
+    and     r3, r8, r5, lsr #1
+    orr     r2, r2, r3
+    and     r5, r5, r7
+    orr     r5, r2, r5, lsl #3      //KEY_DOUBLE_UPDATE_4(r5)
+    str.w   r5, [r1, #304]
+    str.w   r4, [r1, #308]
     // KEY_DOULBE/TRIPLE_UPDATE_4
     // masks
-    movw r12, #0x0fff
-    movw r11, #0x000f
-    lsl r10, r12, #16
-    movw r9, #0x003f
-    movw r8, #0x00ff
-    movw r7, #0x03ff
-    lsl r7, r7, #16
-    ldrd r4, r5, [r1, #32]
-    and r2, r7, r4, lsr #6
-    and r3, r4, r9, lsl #16
-    orr r2, r2, r3, lsl #10
-    and r3, r12, r4, lsr #4
-    orr r2, r2, r3
-    and r4, r4, r11
-    orr r4, r2, r4, lsl #12 //KEY_TRIPLE_UPDATE_4(r4)
-    and r2, r10, r5, lsr #4
-    and r3, r5, r11, lsl #16
-    orr r2, r2, r3, lsl #12
-    and r3, r8, r5, lsr #8
-    orr r2, r2, r3
-    and r5, r5, r8
-    orr r5, r2, r5, lsl #8 //KEY_DOUBLE_UPDATE_4(r5)
-    strd r5, r4, [r1, #112]
-    and r2, r7, r5, lsr #6
-    and r3, r5, r9, lsl #16
-    orr r2, r2, r3, lsl #10
-    and r3, r12, r5, lsr #4
-    orr r2, r2, r3
-    and r5, r5, r11
-    orr r5, r2, r5, lsl #12 //KEY_TRIPLE_UPDATE_4(r5)
-    and r2, r10, r4, lsr #4
-    and r3, r4, r11, lsl #16
-    orr r2, r2, r3, lsl #12
-    and r3, r8, r4, lsr #8
-    orr r2, r2, r3
-    and r4, r4, r8
-    orr r4, r2, r4, lsl #8 //KEY_DOUBLE_UPDATE_4(r4)
-    strd r4, r5, [r1, #192]
-    and r2, r7, r4, lsr #6
-    and r3, r4, r9, lsl #16
-    orr r2, r2, r3, lsl #10
-    and r3, r12, r4, lsr #4
-    orr r2, r2, r3
-    and r4, r4, r11
-    orr r4, r2, r4, lsl #12 //KEY_TRIPLE_UPDATE_4(r4)
-    and r2, r10, r5, lsr #4
-    and r3, r5, r11, lsl #16
-    orr r2, r2, r3, lsl #12
-    and r3, r8, r5, lsr #8
-    orr r2, r2, r3
-    and r5, r5, r8
-    orr r5, r2, r5, lsl #8 //KEY_DOUBLE_UPDATE_4(r5)
-    strd r5, r4, [r1, #272]
-    ldrd r4, r5, [r1, #72]
-    and r2, r7, r4, lsr #6
-    and r3, r4, r9, lsl #16
-    orr r2, r2, r3, lsl #10
-    and r3, r12, r4, lsr #4
-    orr r2, r2, r3
-    and r4, r4, r11
-    orr r4, r2, r4, lsl #12 //KEY_TRIPLE_UPDATE_4(r4)
-    and r2, r10, r5, lsr #4
-    and r3, r5, r11, lsl #16
-    orr r2, r2, r3, lsl #12
-    and r3, r8, r5, lsr #8
-    orr r2, r2, r3
-    and r5, r5, r8
-    orr r5, r2, r5, lsl #8 //KEY_DOUBLE_UPDATE_4(r5)
-    strd r5, r4, [r1, #152]
-    and r2, r7, r5, lsr #6
-    and r3, r5, r9, lsl #16
-    orr r2, r2, r3, lsl #10
-    and r3, r12, r5, lsr #4
-    orr r2, r2, r3
-    and r5, r5, r11
-    orr r5, r2, r5, lsl #12 //KEY_TRIPLE_UPDATE_4(r5)
-    and r2, r10, r4, lsr #4
-    and r3, r4, r11, lsl #16
-    orr r2, r2, r3, lsl #12
-    and r3, r8, r4, lsr #8
-    orr r2, r2, r3
-    and r4, r4, r8
-    orr r4, r2, r4, lsl #8 //KEY_DOUBLE_UPDATE_4(r4)
-    strd r4, r5, [r1, #232]
-    and r2, r7, r4, lsr #6
-    and r3, r4, r9, lsl #16
-    orr r2, r2, r3, lsl #10
-    and r3, r12, r4, lsr #4
-    orr r2, r2, r3
-    and r4, r4, r11
-    orr r4, r2, r4, lsl #12 //KEY_TRIPLE_UPDATE_4(r4)
-    and r2, r10, r5, lsr #4
-    and r3, r5, r11, lsl #16
-    orr r2, r2, r3, lsl #12
-    and r3, r8, r5, lsr #8
-    orr r2, r2, r3
-    and r5, r5, r8
-    orr r5, r2, r5, lsl #8 //KEY_DOUBLE_UPDATE_4(r5)
-    strd r5, r4, [r1, #312]
-    pop {r2-r12,r14}
-    bx lr
-    
+    movw    r12, #0x0fff
+    lsl     r10, r12, #16
+    movw    r8, #0x00ff
+    movw    r7, #0x03ff
+    lsl     r7, r7, #16
+    ldrd    r4, r5, [r1, #32]
+    and     r2, r7, r4, lsr #6
+    and     r3, r4, #0x003f0000
+    orr     r2, r2, r3, lsl #10
+    and     r3, r12, r4, lsr #4
+    orr     r2, r2, r3
+    and     r4, r4, #0x000f
+    orr     r4, r2, r4, lsl #12     //KEY_TRIPLE_UPDATE_4(r4)
+    and     r2, r10, r5, lsr #4
+    and     r3, r5, #0x000f0000
+    orr     r2, r2, r3, lsl #12
+    and     r3, r8, r5, lsr #8
+    orr     r2, r2, r3
+    and     r5, r5, r8
+    orr     r5, r2, r5, lsl #8      //KEY_DOUBLE_UPDATE_4(r5)
+    str.w   r5, [r1, #112]
+    str.w   r4, [r1, #116]
+    and     r2, r7, r5, lsr #6
+    and     r3, r5, #0x003f0000
+    orr     r2, r2, r3, lsl #10
+    and     r3, r12, r5, lsr #4
+    orr     r2, r2, r3
+    and     r5, r5, #0x000f
+    orr     r5, r2, r5, lsl #12     //KEY_TRIPLE_UPDATE_4(r5)
+    and     r2, r10, r4, lsr #4
+    and     r3, r4, #0x000f0000
+    orr     r2, r2, r3, lsl #12
+    and     r3, r8, r4, lsr #8
+    orr     r2, r2, r3
+    and     r4, r4, r8
+    orr     r4, r2, r4, lsl #8      //KEY_DOUBLE_UPDATE_4(r4)
+    str.w   r4, [r1, #192]
+    str.w   r5, [r1, #196]
+    and     r2, r7, r4, lsr #6
+    and     r3, r4, #0x003f0000
+    orr     r2, r2, r3, lsl #10
+    and     r3, r12, r4, lsr #4
+    orr     r2, r2, r3
+    and     r4, r4, #0x000f
+    orr     r4, r2, r4, lsl #12     //KEY_TRIPLE_UPDATE_4(r4)
+    and     r2, r10, r5, lsr #4
+    and     r3, r5, #0x000f0000
+    orr     r2, r2, r3, lsl #12
+    and     r3, r8, r5, lsr #8
+    orr     r2, r2, r3
+    and     r5, r5, r8
+    orr     r5, r2, r5, lsl #8      //KEY_DOUBLE_UPDATE_4(r5)
+    strd    r5, r4, [r1, #272]
+    ldrd    r4, r5, [r1, #72]
+    and     r2, r7, r4, lsr #6
+    and     r3, r4, #0x003f0000
+    orr     r2, r2, r3, lsl #10
+    and     r3, r12, r4, lsr #4
+    orr     r2, r2, r3
+    and     r4, r4, #0x000f
+    orr     r4, r2, r4, lsl #12     //KEY_TRIPLE_UPDATE_4(r4)
+    and     r2, r10, r5, lsr #4
+    and     r3, r5, #0x000f0000
+    orr     r2, r2, r3, lsl #12
+    and     r3, r8, r5, lsr #8
+    orr     r2, r2, r3
+    and     r5, r5, r8
+    orr     r5, r2, r5, lsl #8      //KEY_DOUBLE_UPDATE_4(r5)
+    str.w   r5, [r1, #152]
+    str.w   r4, [r1, #156]
+    and     r2, r7, r5, lsr #6
+    and     r3, r5, #0x003f0000
+    orr     r2, r2, r3, lsl #10
+    and     r3, r12, r5, lsr #4
+    orr     r2, r2, r3
+    and     r5, r5, #0x000f
+    orr     r5, r2, r5, lsl #12     //KEY_TRIPLE_UPDATE_4(r5)
+    and     r2, r10, r4, lsr #4
+    and     r3, r4, #0x000f0000
+    orr     r2, r2, r3, lsl #12
+    and     r3, r8, r4, lsr #8
+    orr     r2, r2, r3
+    and     r4, r4, r8
+    orr     r4, r2, r4, lsl #8      //KEY_DOUBLE_UPDATE_4(r4)
+    str.w   r4, [r1, #232]
+    str.w   r5, [r1, #236]
+    and     r2, r7, r4, lsr #6
+    and     r3, r4, #0x003f0000
+    orr     r2, r2, r3, lsl #10
+    and     r3, r12, r4, lsr #4
+    orr     r2, r2, r3
+    and     r4, r4, #0x000f
+    orr     r4, r2, r4, lsl #12     //KEY_TRIPLE_UPDATE_4(r4)
+    and     r2, r10, r5, lsr #4
+    and     r3, r5, #0x000f0000
+    orr     r2, r2, r3, lsl #12
+    and     r3, r8, r5, lsr #8
+    orr     r2, r2, r3
+    and     r5, r5, r8
+    orr     r5, r2, r5, lsl #8      //KEY_DOUBLE_UPDATE_4(r5)
+    str.w   r5, [r1, #312]
+    str.w   r4, [r1, #316]
+    pop     {r2-r12,r14}
+    bx      lr
 
 /*****************************************************************************
 * Fully unrolled ARM assembly implementation of the GIFTb-128 block cipher.

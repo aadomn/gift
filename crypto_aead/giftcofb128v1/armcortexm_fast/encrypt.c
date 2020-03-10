@@ -1,35 +1,28 @@
-/*******************************************************************************
-* Constant-time 32-bit implementation of the GIFT-COFB authenticated cipher.
-* 
-* @author   Alexandre Adomnicai, Nanyang Technological University,
-*           alexandre.adomnicai@ntu.edu.sg
-* @date     January 2020
-*******************************************************************************/
 #include <string.h>
+#include "cofb.h"
 #include "giftb128.h"
-#include "giftcofb128v1.h"
 
-static inline void padding(u32* dest, const u32* src, const u32 no_of_bytes) {
+static inline void padding(u32* d, const u32* s, const u32 no_of_bytes){
     u32 i;
     if (no_of_bytes == 0) {
-        dest[0] = 0x00000080; // little-endian
-        dest[1] = 0x00000000;
-        dest[2] = 0x00000000;
-        dest[3] = 0x00000000;
+        d[0] = 0x00000080; // little-endian
+        d[1] = 0x00000000;
+        d[2] = 0x00000000;
+        d[3] = 0x00000000;
     }
     else if (no_of_bytes < GIFT128_BLOCK_SIZE) {
         for (i = 0; i < no_of_bytes/4+1; i++)
-            dest[i] = src[i];
-        dest[i-1] &= ~(0xffffffffL << (no_of_bytes % 4)*8);
-        dest[i-1] |= 0x00000080L << (no_of_bytes % 4)*8;
+            d[i] = s[i];
+        d[i-1] &= ~(0xffffffffL << (no_of_bytes % 4)*8);
+        d[i-1] |= 0x00000080L << (no_of_bytes % 4)*8;
         for (; i < 4; i++)
-            dest[i] = 0x00000000;
+            d[i] = 0x00000000;
     }
     else {
-        dest[0] = src[0];
-        dest[1] = src[1];
-        dest[2] = src[2];
-        dest[3] = src[3];
+        d[0] = s[0];
+        d[1] = s[1];
+        d[2] = s[2];
+        d[3] = s[3];
     }
 }
 
@@ -37,7 +30,7 @@ static inline void padding(u32* dest, const u32* src, const u32 no_of_bytes) {
 * Constant-time implementation of the GIFT-COFB authenticated cipher based on
 * fixsliced GIFTb-128. Encryption/decryption is handled by the same function,
 * depending on the 'mode' parameter (1/0).
-****************************************************************************/
+ ***************************************************************************/
 int giftcofb_crypt(u8* out, const u8* key, const u8* nonce, const u8* ad,
                 u32 ad_len, const u8* in, u32 in_len, const int encrypting) {
 
@@ -127,9 +120,6 @@ int giftcofb_crypt(u8* out, const u8* key, const u8* nonce, const u8* ad,
     return tmp0;
 }
 
-/****************************************************************************
-* API required by the NIST for the LWC competition.
-****************************************************************************/
 int crypto_aead_encrypt(unsigned char* c, unsigned long long* clen,
                     const unsigned char* m, unsigned long long mlen,
                     const unsigned char* ad, unsigned long long adlen,
@@ -140,9 +130,6 @@ int crypto_aead_encrypt(unsigned char* c, unsigned long long* clen,
     return giftcofb_crypt(c, k, npub, ad, adlen, m, mlen, COFB_ENCRYPT);
 }
 
-/****************************************************************************
-* API required by the NIST for the LWC competition.
-****************************************************************************/
 int crypto_aead_decrypt(unsigned char* m, unsigned long long *mlen,
                     unsigned char* nsec, const unsigned char* c,
                     unsigned long long clen, const unsigned char* ad,
