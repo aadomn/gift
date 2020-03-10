@@ -13,7 +13,9 @@ This repository contains optimized software implementations for the following al
 For each algorithm, one can find:
 
 - `opt32`: 32-bit word oriented C implementation  
-- `armcortexm`: ARM assembly implementation for Cortex-M processors 
+- `armcortexm_fast`: Fully unrolled ARM assembly implementation for Cortex-M processors (speed optimized)
+- `armcortexm_compact`: Compact ARM assembly implementation for Cortex-M processors (code size optimized)
+- `armcortexm_balanced`: Balanced assembly implementation for Cortex-M processors (globally efficient with limited impact on code size)
 
 # Interface
 
