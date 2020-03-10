@@ -997,7 +997,7 @@ giftb128_encrypt_block:
     and     r8, r3, r11, lsr #12
     and     r11, r11, r14
     orr     r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
-    rev16 r10, r10 //HALF_ROR(r10, 8)
+    rev16   r10, r10 //HALF_ROR(r10, 8)
     eor     r10, r10, r6 //add 1st keyword
     eor     r11, r11, r7 //add 2nd keyword
     eor     r12, r12, r5 //add     rconst
@@ -1133,7 +1133,7 @@ giftb128_encrypt_block:
     and     r8, r3, r11, lsr #12
     and     r11, r11, r14
     orr     r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
-    rev16 r10, r10 //HALF_ROR(r10, 8)
+    rev16   r10, r10 //HALF_ROR(r10, 8)
     eor     r10, r10, r6 //add 1st keyword
     eor     r11, r11, r7 //add 2nd keyword
     eor     r9, r9, r5 //add     rconst
@@ -1269,7 +1269,7 @@ giftb128_encrypt_block:
     and     r8, r3, r11, lsr #12
     and     r11, r11, r14
     orr     r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
-    rev16 r10, r10 //HALF_ROR(r10, 8)
+    rev16   r10, r10 //HALF_ROR(r10, 8)
     eor     r10, r10, r6 //add 1st keyword
     eor     r11, r11, r7 //add 2nd keyword
     eor     r12, r12, r5 //add     rconst
@@ -1405,7 +1405,7 @@ giftb128_encrypt_block:
     and     r8, r3, r11, lsr #12
     and     r11, r11, r14
     orr     r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
-    rev16 r10, r10 //HALF_ROR(r10, 8)
+    rev16   r10, r10 //HALF_ROR(r10, 8)
     eor     r10, r10, r6 //add 1st keyword
     eor     r11, r11, r7 //add 2nd keyword
     eor     r9, r9, r5 //add     rconst
@@ -1541,7 +1541,7 @@ giftb128_encrypt_block:
     and     r8, r3, r11, lsr #12
     and     r11, r11, r14
     orr     r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
-    rev16 r10, r10 //HALF_ROR(r10, 8)
+    rev16   r10, r10 //HALF_ROR(r10, 8)
     eor     r10, r10, r6 //add 1st keyword
     eor     r11, r11, r7 //add 2nd keyword
     eor     r12, r12, r5 //add     rconst
@@ -1677,7 +1677,7 @@ giftb128_encrypt_block:
     and     r8, r3, r11, lsr #12
     and     r11, r11, r14
     orr     r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
-    rev16 r10, r10 //HALF_ROR(r10, 8)
+    rev16   r10, r10 //HALF_ROR(r10, 8)
     eor     r10, r10, r6 //add 1st keyword
     eor     r11, r11, r7 //add 2nd keyword
     eor     r9, r9, r5 //add     rconst
@@ -1814,7 +1814,7 @@ giftb128_encrypt_block:
     and     r8, r3, r11, lsr #12
     and     r11, r11, r14
     orr     r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
-    rev16 r10, r10 //HALF_ROR(r10, 8)
+    rev16   r10, r10 //HALF_ROR(r10, 8)
     eor     r10, r10, r6 //add 1st keyword
     eor     r11, r11, r7 //add 2nd keyword
     eor     r12, r12, r5 //add     rconst
@@ -1950,7 +1950,7 @@ giftb128_encrypt_block:
     and     r8, r3, r11, lsr #12
     and     r11, r11, r14
     orr     r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
-    rev16 r10, r10 //HALF_ROR(r10, 8)
+    rev16   r10, r10 //HALF_ROR(r10, 8)
     eor     r10, r10, r6 //add 1st keyword
     eor     r11, r11, r7 //add 2nd keyword
     eor     r9, r9, r5 //add     rconst
