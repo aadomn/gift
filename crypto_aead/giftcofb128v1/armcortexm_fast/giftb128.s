@@ -928,1123 +928,1118 @@ gift128_keyschedule:
 * Fully unrolled ARM assembly implementation of the GIFTb-128 block cipher.
 * This function simply encrypts a 128-bit block, without any operation mode.
 *****************************************************************************/
-@ void giftb128_encrypt_block(u8 *out, const u32* rkey, const u8 *block)
+@ void giftb128_encrypt_block(u8 *out, const u32* rkey,
+@       const u8 *block) {
 .global giftb128_encrypt_block
 .type   giftb128_encrypt_block,%function
 giftb128_encrypt_block:
     push {r2-r12,r14}
-
     // load plaintext blocks
-    ldm r2, {r9-r12}
+    ldm     r2, {r9-r12}
     // endianness
-    rev r9, r9
-    rev r10, r10
-    rev r11, r11
-    rev r12, r12
-
+    rev     r9, r9
+    rev     r10, r10
+    rev     r11, r11
+    rev     r12, r12
     // masks for HALF/BYTE/NIBBLE rotations
-    movw r2, #0x1111
-    movt r2, #0x1111 //for NIBBLE_ROR
-    movw r3, #0x000f
-    movt r3, #0x000f //for HALF_ROR
-    mvn r4, r2, lsl #3 //0x7777777 for NIBBLE_ROR
-
+    movw    r2, #0x1111
+    movt    r2, #0x1111 //for NIBBLE_ROR
+    movw    r3, #0x000f
+    movt    r3, #0x000f //for HALF_ROR
+    mvn     r4, r2, lsl #3 //0x7777777 for NIBBLE_ROR
     // ------------------ 1st QUINTUPLE ROUND ------------------
     // 1st round
-    movw r5, 0x0008
-    movt r5, 0x1000 //load rconst
-    ldrd r6, r7, [r1] //load rkey
-    and r8, r9, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r12
-    eor r9, r9, r8
-    orr r8, r9, r10
-    eor r11, r11, r8
-    eor r12, r12, r11
-    eor r10, r10, r12
-    and r8, r9, r10
-    eor r11, r11, r8
-    mvn r12, r12
-    and r8, r4, r12, lsr #1
-    and r12, r12, r2
-    orr r12, r8, r12, lsl #3 //NIBBLE_ROR(r12, 1)
-    and r8, r4, r11
-    and r11, r2, r11, lsr #3
-    orr r11, r11, r8, lsl #1 //NIBBLE_ROR(r11, 3)
-    orr r14, r2, r2, lsl #1 //0x33333333 for NIBBLE_ROR
-    and r8, r14, r10, lsr #2
-    and r10, r10, r14
-    orr r10, r8, r10, lsl #2 //NIBBLE_ROR(r10, 2)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r9, r9, r5 //add rconst
+    movw    r5, 0x0008
+    movt    r5, 0x1000 //load rconst
+    ldrd    r6, r7, [r1] //load rkey
+    and     r8, r9, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r12
+    eor     r9, r9, r8
+    orr     r8, r9, r10
+    eor     r11, r11, r8
+    eor     r12, r12, r11
+    eor     r10, r10, r12
+    and     r8, r9, r10
+    eor     r11, r11, r8
+    mvn     r12, r12
+    and     r8, r4, r12, lsr #1
+    and     r12, r12, r2
+    orr     r12, r8, r12, lsl #3 //NIBBLE_ROR(r12, 1)
+    and     r8, r4, r11
+    and     r11, r2, r11, lsr #3
+    orr     r11, r11, r8, lsl #1 //NIBBLE_ROR(r11, 3)
+    orr     r14, r2, r2, lsl #1 //0x33333333 for NIBBLE_ROR
+    and     r8, r14, r10, lsr #2
+    and     r10, r10, r14
+    orr     r10, r8, r10, lsl #2 //NIBBLE_ROR(r10, 2)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r9, r9, r5 //add     rconst
     // 2nd round
-    movw r5, 0x8000
-    movt r5, 0x8001 //load rconst
-    ldrd r6, r7, [r1, #8] //load rkey
-    and r8, r12, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r9
-    eor r12, r12, r8
-    orr r8, r12, r10
-    eor r11, r11, r8
-    eor r9, r9, r11
-    eor r10, r10, r9
-    and r8, r12, r10
-    eor r11, r11, r8
-    mvn r9, r9
-    mvn r14, r3, lsl #12 //0x0fff0fff for HALF_ROR
-    and r8, r14, r9, lsr #4
-    and r9, r9, r3
-    orr r9, r8, r9, lsl #12 //HALF_ROR(r9, 4)
-    and r8, r3, r11, lsr #12
-    and r11, r11, r14
-    orr r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
+    movw    r5, 0x8000
+    movt    r5, 0x8001 //load rconst
+    ldrd    r6, r7, [r1, #8] //load rkey
+    and     r8, r12, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r9
+    eor     r12, r12, r8
+    orr     r8, r12, r10
+    eor     r11, r11, r8
+    eor     r9, r9, r11
+    eor     r10, r10, r9
+    and     r8, r12, r10
+    eor     r11, r11, r8
+    mvn     r9, r9
+    mvn     r14, r3, lsl #12 //0x0fff0fff for HALF_ROR
+    and     r8, r14, r9, lsr #4
+    and     r9, r9, r3
+    orr     r9, r8, r9, lsl #12 //HALF_ROR(r9, 4)
+    and     r8, r3, r11, lsr #12
+    and     r11, r11, r14
+    orr     r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
     rev16 r10, r10 //HALF_ROR(r10, 8)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r12, r12, r5 //add rconst
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r12, r12, r5 //add     rconst
     // 3rd round
-    movw r5, 0x0002
-    movt r5, 0x5400 //load rconst
-    ldrd r6, r7, [r1, #16] //load rkey
-    and r8, r9, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r12
-    eor r9, r9, r8
-    orr r8, r9, r10
-    eor r11, r11, r8
-    eor r12, r12, r11
-    eor r10, r10, r12
-    and r8, r9, r10
-    eor r11, r11, r8
-    mvn r12, r12
-    orr r14, r2, r2, lsl #2 //0x55555555 for SWAPMOVE
-    eor r8, r10, r10, lsr #1
-    and r8, r8, r14
-    eor r10, r10, r8
-    eor r10, r10, r8, lsl #1 //SWAPMOVE(r10, r10, 0x55555555, 1)
-    eor r8, r12, r12, lsr #1
-    and r8, r8, r14, lsr #16
-    eor r12, r12, r8
-    eor r12, r12, r8, lsl #1 //SWAPMOVE(r12, r12, 0x55550000, 1)
-    eor r8, r11, r11, lsr #1
-    and r8, r8, r14, lsl #16
-    eor r11, r11, r8
-    eor r11, r11, r8, lsl #1 //SWAPMOVE(r11, r11, 0x00005555, 1)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r7, r11, ror #16 //add 2nd keyword
-    eor r9, r9, r5 //add rconst
+    movw    r5, 0x0002
+    movt    r5, 0x5400 //load rconst
+    ldrd    r6, r7, [r1, #16] //load rkey
+    and     r8, r9, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r12
+    eor     r9, r9, r8
+    orr     r8, r9, r10
+    eor     r11, r11, r8
+    eor     r12, r12, r11
+    eor     r10, r10, r12
+    and     r8, r9, r10
+    eor     r11, r11, r8
+    mvn     r12, r12
+    orr     r14, r2, r2, lsl #2 //0x55555555 for SWAPMOVE
+    eor     r8, r10, r10, lsr #1
+    and     r8, r8, r14
+    eor     r10, r10, r8
+    eor     r10, r10, r8, lsl #1 //SWAPMOVE(r10, r10, 0x55555555, 1)
+    eor     r8, r12, r12, lsr #1
+    and     r8, r8, r14, lsr #16
+    eor     r12, r12, r8
+    eor     r12, r12, r8, lsl #1 //SWAPMOVE(r12, r12, 0x55550000, 1)
+    eor     r8, r11, r11, lsr #1
+    and     r8, r8, r14, lsl #16
+    eor     r11, r11, r8
+    eor     r11, r11, r8, lsl #1 //SWAPMOVE(r11, r11, 0x00005555, 1)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r7, r11, ror #16 //add 2nd keyword
+    eor     r9, r9, r5 //add     rconst
     // 4th round
-    movw r5, 0x0181
-    movt r5, 0x0101 //load rconst
-    ldrd r6, r7, [r1, #24] //load rkey
-    and r8, r11, r12, ror #16 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r9
-    eor r12, r8, r12, ror #16
-    orr r8, r12, r10
-    eor r11, r11, r8
-    eor r9, r9, r11
-    eor r10, r10, r9
-    and r8, r12, r10
-    eor r11, r11, r8
-    mvn r9, r9
-    eor r14, r3, r3, lsl #8 //0x0f0f0f0f for BYTE_ROR
-    and r8, r14, r10, lsr #4
-    and r10, r10, r14
-    orr r10, r8, r10, lsl #4 //BYTE_ROR(r10, 4)
-    orr r14, r14, r14, lsl #2 //0x3f3f3f3f for BYTE_ROR
-    mvn r8, r14
-    and r8, r8, r11, lsl #6
-    and r11, r14, r11, lsr #2
-    orr r11, r11, r8 //BYTE_ROR(r11, 2)
-    mvn r8, r14, lsr #6
-    and r8, r8, r9, lsr #6
-    and r9, r14, r9
-    orr r9, r8, r9, lsl #2 //BYTE_ROR(r9, 6)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r12, r12, r5 //add rconst
+    movw    r5, 0x0181
+    movt    r5, 0x0101 //load rconst
+    ldrd    r6, r7, [r1, #24] //load rkey
+    and     r8, r11, r12, ror #16 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r9
+    eor     r12, r8, r12, ror #16
+    orr     r8, r12, r10
+    eor     r11, r11, r8
+    eor     r9, r9, r11
+    eor     r10, r10, r9
+    and     r8, r12, r10
+    eor     r11, r11, r8
+    mvn     r9, r9
+    eor     r14, r3, r3, lsl #8 //0x0f0f0f0f for BYTE_ROR
+    and     r8, r14, r10, lsr #4
+    and     r10, r10, r14
+    orr     r10, r8, r10, lsl #4 //BYTE_ROR(r10, 4)
+    orr     r14, r14, r14, lsl #2 //0x3f3f3f3f for BYTE_ROR
+    mvn     r8, r14
+    and     r8, r8, r11, lsl #6
+    and     r11, r14, r11, lsr #2
+    orr     r11, r11, r8 //BYTE_ROR(r11, 2)
+    mvn     r8, r14, lsr #6
+    and     r8, r8, r9, lsr #6
+    and     r9, r14, r9
+    orr     r9, r8, r9, lsl #2 //BYTE_ROR(r9, 6)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r12, r12, r5 //add     rconst
     // 5th round
-    movw r5, 0x001f
-    movt r5, 0x8000 //load rconst
-    ldrd r6, r7, [r1, #32] //load rkey
-    and r8, r9, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r12
-    eor r9, r9, r8
-    orr r8, r9, r10
-    eor r11, r11, r8
-    eor r12, r12, r11
-    eor r10, r10, r12
-    and r8, r9, r10
-    eor r11, r11, r8
-    mvn r12, r12
-    eor r10, r6, r10, ror #16 //add 1st keyword
-    eor r11, r7, r11, ror #8 //add 2nd keyword
-    eor r9, r9, r5 //add rconst
+    movw    r5, 0x001f
+    movt    r5, 0x8000 //load rconst
+    ldrd    r6, r7, [r1, #32] //load rkey
+    and     r8, r9, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r12
+    eor     r9, r9, r8
+    orr     r8, r9, r10
+    eor     r11, r11, r8
+    eor     r12, r12, r11
+    eor     r10, r10, r12
+    and     r8, r9, r10
+    eor     r11, r11, r8
+    mvn     r12, r12
+    eor     r10, r6, r10, ror #16 //add 1st keyword
+    eor     r11, r7, r11, ror #8 //add 2nd keyword
+    eor     r9, r9, r5 //add     rconst
 
     // ------------------ 2nd QUINTUPLE ROUND ------------------
     // 1st round
-    movw r5, 0x8880
-    movt r5, 0x1088 //load rconst
-    ldrd r6, r7, [r1, #40] //load rkey
-    and r8, r11, r12, ror #24 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r9
-    eor r12, r8, r12, ror #24
-    orr r8, r12, r10
-    eor r11, r11, r8
-    eor r9, r9, r11
-    eor r10, r10, r9
-    and r8, r12, r10
-    eor r11, r11, r8
-    mvn r9, r9
-    and r8, r4, r9, lsr #1
-    and r9, r9, r2
-    orr r9, r8, r9, lsl #3 //NIBBLE_ROR(r9, 1)
-    and r8, r4, r11
-    and r11, r2, r11, lsr #3
-    orr r11, r11, r8, lsl #1 //NIBBLE_ROR(r11, 3)
-    orr r14, r2, r2, lsl #1 //0x33333333 for NIBBLE_ROR
-    and r8, r14, r10, lsr #2
-    and r10, r10, r14
-    orr r10, r8, r10, lsl #2 //NIBBLE_ROR(r10, 2)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r12, r12, r5 //add rconst
+    movw    r5, 0x8880
+    movt    r5, 0x1088 //load rconst
+    ldrd    r6, r7, [r1, #40] //load rkey
+    and     r8, r11, r12, ror #24 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r9
+    eor     r12, r8, r12, ror #24
+    orr     r8, r12, r10
+    eor     r11, r11, r8
+    eor     r9, r9, r11
+    eor     r10, r10, r9
+    and     r8, r12, r10
+    eor     r11, r11, r8
+    mvn     r9, r9
+    and     r8, r4, r9, lsr #1
+    and     r9, r9, r2
+    orr     r9, r8, r9, lsl #3 //NIBBLE_ROR(r9, 1)
+    and     r8, r4, r11
+    and     r11, r2, r11, lsr #3
+    orr     r11, r11, r8, lsl #1 //NIBBLE_ROR(r11, 3)
+    orr     r14, r2, r2, lsl #1 //0x33333333 for NIBBLE_ROR
+    and     r8, r14, r10, lsr #2
+    and     r10, r10, r14
+    orr     r10, r8, r10, lsl #2 //NIBBLE_ROR(r10, 2)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r12, r12, r5 //add     rconst
     // 2nd round
-    movw r5, 0xe000
-    movt r5, 0x6001 //load rconst
-    ldrd r6, r7, [r1, #48] //load rkey
-    and r8, r9, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r12
-    eor r9, r9, r8
-    orr r8, r9, r10
-    eor r11, r11, r8
-    eor r12, r12, r11
-    eor r10, r10, r12
-    and r8, r9, r10
-    eor r11, r11, r8
-    mvn r12, r12
-    mvn r14, r3, lsl #12 //0x0fff0fff for HALF_ROR
-    and r8, r14, r12, lsr #4
-    and r12, r12, r3
-    orr r12, r8, r12, lsl #12 //HALF_ROR(r12, 4)
-    and r8, r3, r11, lsr #12
-    and r11, r11, r14
-    orr r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
+    movw    r5, 0xe000
+    movt    r5, 0x6001 //load rconst
+    ldrd    r6, r7, [r1, #48] //load rkey
+    and     r8, r9, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r12
+    eor     r9, r9, r8
+    orr     r8, r9, r10
+    eor     r11, r11, r8
+    eor     r12, r12, r11
+    eor     r10, r10, r12
+    and     r8, r9, r10
+    eor     r11, r11, r8
+    mvn     r12, r12
+    mvn     r14, r3, lsl #12 //0x0fff0fff for HALF_ROR
+    and     r8, r14, r12, lsr #4
+    and     r12, r12, r3
+    orr     r12, r8, r12, lsl #12 //HALF_ROR(r12, 4)
+    and     r8, r3, r11, lsr #12
+    and     r11, r11, r14
+    orr     r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
     rev16 r10, r10 //HALF_ROR(r10, 8)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r9, r9, r5 //add rconst
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r9, r9, r5 //add     rconst
     // 3rd round
-    movw r5, 0x0002
-    movt r5, 0x5150 //load rconst
-    ldrd r6, r7, [r1, #56] //load rkey
-    and r8, r12, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r9
-    eor r12, r12, r8
-    orr r8, r12, r10
-    eor r11, r11, r8
-    eor r9, r9, r11
-    eor r10, r10, r9
-    and r8, r12, r10
-    eor r11, r11, r8
-    mvn r9, r9
-    orr r14, r2, r2, lsl #2 //0x55555555 for SWAPMOVE
-    eor r8, r10, r10, lsr #1
-    and r8, r8, r14
-    eor r10, r10, r8
-    eor r10, r10, r8, lsl #1 //SWAPMOVE(r10, r10, 0x55555555, 1)
-    eor r8, r9, r9, lsr #1
-    and r8, r8, r14, lsr #16
-    eor r9, r9, r8
-    eor r9, r9, r8, lsl #1 //SWAPMOVE(r9, r9, 0x00005555, 1)
-    eor r8, r11, r11, lsr #1
-    and r8, r8, r14, lsl #16
-    eor r11, r11, r8
-    eor r11, r11, r8, lsl #1 //SWAPMOVE(r11, r11, 0x55550000, 1)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r7, r11, ror #16 //add 2nd keyword
-    eor r12, r12, r5 //add rconst
+    movw    r5, 0x0002
+    movt    r5, 0x5150 //load rconst
+    ldrd    r6, r7, [r1, #56] //load rkey
+    and     r8, r12, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r9
+    eor     r12, r12, r8
+    orr     r8, r12, r10
+    eor     r11, r11, r8
+    eor     r9, r9, r11
+    eor     r10, r10, r9
+    and     r8, r12, r10
+    eor     r11, r11, r8
+    mvn     r9, r9
+    orr     r14, r2, r2, lsl #2 //0x55555555 for SWAPMOVE
+    eor     r8, r10, r10, lsr #1
+    and     r8, r8, r14
+    eor     r10, r10, r8
+    eor     r10, r10, r8, lsl #1 //SWAPMOVE(r10, r10, 0x55555555, 1)
+    eor     r8, r9, r9, lsr #1
+    and     r8, r8, r14, lsr #16
+    eor     r9, r9, r8
+    eor     r9, r9, r8, lsl #1 //SWAPMOVE(r9, r9, 0x00005555, 1)
+    eor     r8, r11, r11, lsr #1
+    and     r8, r8, r14, lsl #16
+    eor     r11, r11, r8
+    eor     r11, r11, r8, lsl #1 //SWAPMOVE(r11, r11, 0x55550000, 1)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r7, r11, ror #16 //add 2nd keyword
+    eor     r12, r12, r5 //add     rconst
     // 4th round
-    movw r5, 0x0180
-    movt r5, 0x0303 //load rconst
-    ldrd r6, r7, [r1, #64] //load rkey
-    and r8, r11, r9, ror #16 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r12
-    eor r9, r8, r9, ror #16
-    orr r8, r9, r10
-    eor r11, r11, r8
-    eor r12, r12, r11
-    eor r10, r10, r12
-    and r8, r9, r10
-    eor r11, r11, r8
-    mvn r12, r12
-    eor r14, r3, r3, lsl #8 //0x0f0f0f0f for BYTE_ROR
-    and r8, r14, r10, lsr #4
-    and r10, r10, r14
-    orr r10, r8, r10, lsl #4 //BYTE_ROR(r10, 4)
-    orr r14, r14, r14, lsl #2 //0x3f3f3f3f for BYTE_ROR
-    mvn r8, r14
-    and r8, r8, r11, lsl #6
-    and r11, r14, r11, lsr #2
-    orr r11, r11, r8 //BYTE_ROR(r11, 2)
-    mvn r8, r14, lsr #6
-    and r8, r8, r12, lsr #6
-    and r12, r14, r12
-    orr r12, r8, r12, lsl #2 //BYTE_ROR(r12, 6)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r9, r9, r5 //add rconst
+    movw    r5, 0x0180
+    movt    r5, 0x0303 //load rconst
+    ldrd    r6, r7, [r1, #64] //load rkey
+    and     r8, r11, r9, ror #16 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r12
+    eor     r9, r8, r9, ror #16
+    orr     r8, r9, r10
+    eor     r11, r11, r8
+    eor     r12, r12, r11
+    eor     r10, r10, r12
+    and     r8, r9, r10
+    eor     r11, r11, r8
+    mvn     r12, r12
+    eor     r14, r3, r3, lsl #8 //0x0f0f0f0f for BYTE_ROR
+    and     r8, r14, r10, lsr #4
+    and     r10, r10, r14
+    orr     r10, r8, r10, lsl #4 //BYTE_ROR(r10, 4)
+    orr     r14, r14, r14, lsl #2 //0x3f3f3f3f for BYTE_ROR
+    mvn     r8, r14
+    and     r8, r8, r11, lsl #6
+    and     r11, r14, r11, lsr #2
+    orr     r11, r11, r8 //BYTE_ROR(r11, 2)
+    mvn     r8, r14, lsr #6
+    and     r8, r8, r12, lsr #6
+    and     r12, r14, r12
+    orr     r12, r8, r12, lsl #2 //BYTE_ROR(r12, 6)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r9, r9, r5 //add     rconst
     // 5th round
-    movw r5, 0x002f
-    movt r5, 0x8000 //load rconst
-    ldrd r6, r7, [r1, #72] //load rkey
-    and r8, r12, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r9
-    eor r12, r12, r8
-    orr r8, r12, r10
-    eor r11, r11, r8
-    eor r9, r9, r11
-    eor r10, r10, r9
-    and r8, r12, r10
-    eor r11, r11, r8
-    mvn r9, r9
-    eor r10, r6, r10, ror #16 //add 1st keyword
-    eor r11, r7, r11, ror #8 //add 2nd keyword
-    eor r12, r12, r5 //add rconst
+    movw    r5, 0x002f
+    movt    r5, 0x8000 //load rconst
+    ldrd    r6, r7, [r1, #72] //load rkey
+    and     r8, r12, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r9
+    eor     r12, r12, r8
+    orr     r8, r12, r10
+    eor     r11, r11, r8
+    eor     r9, r9, r11
+    eor     r10, r10, r9
+    and     r8, r12, r10
+    eor     r11, r11, r8
+    mvn     r9, r9
+    eor     r10, r6, r10, ror #16 //add 1st keyword
+    eor     r11, r7, r11, ror #8 //add 2nd keyword
+    eor     r12, r12, r5 //add     rconst
 
     // ------------------ 3rd QUINTUPLE ROUND ------------------
     // 1st round
-    movw r5, 0x8880
-    movt r5, 0x1008 //load rconst
-    ldrd r6, r7, [r1, #80] //load rkey
-    and r8, r11, r9, ror #24 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r12
-    eor r9, r8, r9, ror #24
-    orr r8, r9, r10
-    eor r11, r11, r8
-    eor r12, r12, r11
-    eor r10, r10, r12
-    and r8, r9, r10
-    eor r11, r11, r8
-    mvn r12, r12
-    and r8, r4, r12, lsr #1
-    and r12, r12, r2
-    orr r12, r8, r12, lsl #3 //NIBBLE_ROR(r12, 1)
-    and r8, r4, r11
-    and r11, r2, r11, lsr #3
-    orr r11, r11, r8, lsl #1 //NIBBLE_ROR(r11, 3)
-    orr r14, r2, r2, lsl #1 //0x33333333 for NIBBLE_ROR
-    and r8, r14, r10, lsr #2
-    and r10, r10, r14
-    orr r10, r8, r10, lsl #2 //NIBBLE_ROR(r10, 2)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r9, r9, r5 //add rconst
+    movw    r5, 0x8880
+    movt    r5, 0x1008 //load rconst
+    ldrd    r6, r7, [r1, #80] //load rkey
+    and     r8, r11, r9, ror #24 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r12
+    eor     r9, r8, r9, ror #24
+    orr     r8, r9, r10
+    eor     r11, r11, r8
+    eor     r12, r12, r11
+    eor     r10, r10, r12
+    and     r8, r9, r10
+    eor     r11, r11, r8
+    mvn     r12, r12
+    and     r8, r4, r12, lsr #1
+    and     r12, r12, r2
+    orr     r12, r8, r12, lsl #3 //NIBBLE_ROR(r12, 1)
+    and     r8, r4, r11
+    and     r11, r2, r11, lsr #3
+    orr     r11, r11, r8, lsl #1 //NIBBLE_ROR(r11, 3)
+    orr     r14, r2, r2, lsl #1 //0x33333333 for NIBBLE_ROR
+    and     r8, r14, r10, lsr #2
+    and     r10, r10, r14
+    orr     r10, r8, r10, lsl #2 //NIBBLE_ROR(r10, 2)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r9, r9, r5 //add     rconst
     // 2nd round
-    movw r5, 0x6000
-    movt r5, 0x6001 //load rconst
-    ldrd r6, r7, [r1, #88] //load rkey
-    and r8, r12, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r9
-    eor r12, r12, r8
-    orr r8, r12, r10
-    eor r11, r11, r8
-    eor r9, r9, r11
-    eor r10, r10, r9
-    and r8, r12, r10
-    eor r11, r11, r8
-    mvn r9, r9
-    mvn r14, r3, lsl #12 //0x0fff0fff for HALF_ROR
-    and r8, r14, r9, lsr #4
-    and r9, r9, r3
-    orr r9, r8, r9, lsl #12 //HALF_ROR(r9, 4)
-    and r8, r3, r11, lsr #12
-    and r11, r11, r14
-    orr r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
+    movw    r5, 0x6000
+    movt    r5, 0x6001 //load rconst
+    ldrd    r6, r7, [r1, #88] //load rkey
+    and     r8, r12, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r9
+    eor     r12, r12, r8
+    orr     r8, r12, r10
+    eor     r11, r11, r8
+    eor     r9, r9, r11
+    eor     r10, r10, r9
+    and     r8, r12, r10
+    eor     r11, r11, r8
+    mvn     r9, r9
+    mvn     r14, r3, lsl #12 //0x0fff0fff for HALF_ROR
+    and     r8, r14, r9, lsr #4
+    and     r9, r9, r3
+    orr     r9, r8, r9, lsl #12 //HALF_ROR(r9, 4)
+    and     r8, r3, r11, lsr #12
+    and     r11, r11, r14
+    orr     r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
     rev16 r10, r10 //HALF_ROR(r10, 8)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r12, r12, r5 //add rconst
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r12, r12, r5 //add     rconst
     // 3rd round
-    movw r5, 0x0002
-    movt r5, 0x4150 //load rconst
-    ldrd r6, r7, [r1, #96] //load rkey
-    and r8, r9, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r12
-    eor r9, r9, r8
-    orr r8, r9, r10
-    eor r11, r11, r8
-    eor r12, r12, r11
-    eor r10, r10, r12
-    and r8, r9, r10
-    eor r11, r11, r8
-    mvn r12, r12
-    orr r14, r2, r2, lsl #2 //0x55555555 for SWAPMOVE
-    eor r8, r10, r10, lsr #1
-    and r8, r8, r14
-    eor r10, r10, r8
-    eor r10, r10, r8, lsl #1 //SWAPMOVE(r10, r10, 0x55555555, 1)
-    eor r8, r12, r12, lsr #1
-    and r8, r8, r14, lsr #16
-    eor r12, r12, r8
-    eor r12, r12, r8, lsl #1 //SWAPMOVE(r12, r12, 0x00005555, 1)
-    eor r8, r11, r11, lsr #1
-    and r8, r8, r14, lsl #16
-    eor r11, r11, r8
-    eor r11, r11, r8, lsl #1 //SWAPMOVE(r11, r11, 0x55550000, 1)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r7, r11, ror #16 //add 2nd keyword
-    eor r9, r9, r5 //add rconst
+    movw    r5, 0x0002
+    movt    r5, 0x4150 //load rconst
+    ldrd    r6, r7, [r1, #96] //load rkey
+    and     r8, r9, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r12
+    eor     r9, r9, r8
+    orr     r8, r9, r10
+    eor     r11, r11, r8
+    eor     r12, r12, r11
+    eor     r10, r10, r12
+    and     r8, r9, r10
+    eor     r11, r11, r8
+    mvn     r12, r12
+    orr     r14, r2, r2, lsl #2 //0x55555555 for SWAPMOVE
+    eor     r8, r10, r10, lsr #1
+    and     r8, r8, r14
+    eor     r10, r10, r8
+    eor     r10, r10, r8, lsl #1 //SWAPMOVE(r10, r10, 0x55555555, 1)
+    eor     r8, r12, r12, lsr #1
+    and     r8, r8, r14, lsr #16
+    eor     r12, r12, r8
+    eor     r12, r12, r8, lsl #1 //SWAPMOVE(r12, r12, 0x00005555, 1)
+    eor     r8, r11, r11, lsr #1
+    and     r8, r8, r14, lsl #16
+    eor     r11, r11, r8
+    eor     r11, r11, r8, lsl #1 //SWAPMOVE(r11, r11, 0x55550000, 1)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r7, r11, ror #16 //add 2nd keyword
+    eor     r9, r9, r5 //add     rconst
     // 4th round
-    movw r5, 0x0080
-    movt r5, 0x0303 //load rconst
-    ldrd r6, r7, [r1, #104] //load rkey
-    and r8, r11, r12, ror #16 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r9
-    eor r12, r8, r12, ror #16
-    orr r8, r12, r10
-    eor r11, r11, r8
-    eor r9, r9, r11
-    eor r10, r10, r9
-    and r8, r12, r10
-    eor r11, r11, r8
-    mvn r9, r9
-    eor r14, r3, r3, lsl #8 //0x0f0f0f0f for BYTE_ROR
-    and r8, r14, r10, lsr #4
-    and r10, r10, r14
-    orr r10, r8, r10, lsl #4 //BYTE_ROR(r10, 4)
-    orr r14, r14, r14, lsl #2 //0x3f3f3f3f for BYTE_ROR
-    mvn r8, r14
-    and r8, r8, r11, lsl #6
-    and r11, r14, r11, lsr #2
-    orr r11, r11, r8 //BYTE_ROR(r11, 2)
-    mvn r8, r14, lsr #6
-    and r8, r8, r9, lsr #6
-    and r9, r14, r9
-    orr r9, r8, r9, lsl #2 //BYTE_ROR(r9, 6)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r12, r12, r5 //add rconst
+    movw    r5, 0x0080
+    movt    r5, 0x0303 //load rconst
+    ldrd    r6, r7, [r1, #104] //load rkey
+    and     r8, r11, r12, ror #16 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r9
+    eor     r12, r8, r12, ror #16
+    orr     r8, r12, r10
+    eor     r11, r11, r8
+    eor     r9, r9, r11
+    eor     r10, r10, r9
+    and     r8, r12, r10
+    eor     r11, r11, r8
+    mvn     r9, r9
+    eor     r14, r3, r3, lsl #8 //0x0f0f0f0f for BYTE_ROR
+    and     r8, r14, r10, lsr #4
+    and     r10, r10, r14
+    orr     r10, r8, r10, lsl #4 //BYTE_ROR(r10, 4)
+    orr     r14, r14, r14, lsl #2 //0x3f3f3f3f for BYTE_ROR
+    mvn     r8, r14
+    and     r8, r8, r11, lsl #6
+    and     r11, r14, r11, lsr #2
+    orr     r11, r11, r8 //BYTE_ROR(r11, 2)
+    mvn     r8, r14, lsr #6
+    and     r8, r8, r9, lsr #6
+    and     r9, r14, r9
+    orr     r9, r8, r9, lsl #2 //BYTE_ROR(r9, 6)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r12, r12, r5 //add     rconst
     // 5th round
-    movw r5, 0x0027
-    movt r5, 0x8000 //load rconst
-    ldrd r6, r7, [r1, #112] //load rkey
-    and r8, r9, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r12
-    eor r9, r9, r8
-    orr r8, r9, r10
-    eor r11, r11, r8
-    eor r12, r12, r11
-    eor r10, r10, r12
-    and r8, r9, r10
-    eor r11, r11, r8
-    mvn r12, r12
-    eor r10, r6, r10, ror #16 //add 1st keyword
-    eor r11, r7, r11, ror #8 //add 2nd keyword
-    eor r9, r9, r5 //add rconst
+    movw    r5, 0x0027
+    movt    r5, 0x8000 //load rconst
+    ldrd    r6, r7, [r1, #112] //load rkey
+    and     r8, r9, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r12
+    eor     r9, r9, r8
+    orr     r8, r9, r10
+    eor     r11, r11, r8
+    eor     r12, r12, r11
+    eor     r10, r10, r12
+    and     r8, r9, r10
+    eor     r11, r11, r8
+    mvn     r12, r12
+    eor     r10, r6, r10, ror #16 //add 1st keyword
+    eor     r11, r7, r11, ror #8 //add 2nd keyword
+    eor     r9, r9, r5 //add     rconst
 
     // ------------------ 4th QUINTUPLE ROUND ------------------
     // 1st round
-    movw r5, 0x8880
-    movt r5, 0x1000 //load rconst
-    ldrd r6, r7, [r1, #120] //load rkey
-    and r8, r11, r12, ror #24 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r9
-    eor r12, r8, r12, ror #24
-    orr r8, r12, r10
-    eor r11, r11, r8
-    eor r9, r9, r11
-    eor r10, r10, r9
-    and r8, r12, r10
-    eor r11, r11, r8
-    mvn r9, r9
-    and r8, r4, r9, lsr #1
-    and r9, r9, r2
-    orr r9, r8, r9, lsl #3 //NIBBLE_ROR(r9, 1)
-    and r8, r4, r11
-    and r11, r2, r11, lsr #3
-    orr r11, r11, r8, lsl #1 //NIBBLE_ROR(r11, 3)
-    orr r14, r2, r2, lsl #1 //0x33333333 for NIBBLE_ROR
-    and r8, r14, r10, lsr #2
-    and r10, r10, r14
-    orr r10, r8, r10, lsl #2 //NIBBLE_ROR(r10, 2)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r12, r12, r5 //add rconst
+    movw    r5, 0x8880
+    movt    r5, 0x1000 //load rconst
+    ldrd    r6, r7, [r1, #120] //load rkey
+    and     r8, r11, r12, ror #24 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r9
+    eor     r12, r8, r12, ror #24
+    orr     r8, r12, r10
+    eor     r11, r11, r8
+    eor     r9, r9, r11
+    eor     r10, r10, r9
+    and     r8, r12, r10
+    eor     r11, r11, r8
+    mvn     r9, r9
+    and     r8, r4, r9, lsr #1
+    and     r9, r9, r2
+    orr     r9, r8, r9, lsl #3 //NIBBLE_ROR(r9, 1)
+    and     r8, r4, r11
+    and     r11, r2, r11, lsr #3
+    orr     r11, r11, r8, lsl #1 //NIBBLE_ROR(r11, 3)
+    orr     r14, r2, r2, lsl #1 //0x33333333 for NIBBLE_ROR
+    and     r8, r14, r10, lsr #2
+    and     r10, r10, r14
+    orr     r10, r8, r10, lsl #2 //NIBBLE_ROR(r10, 2)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r12, r12, r5 //add     rconst
     // 2nd round
-    movw r5, 0xe000
-    movt r5, 0x4001 //load rconst
-    ldrd r6, r7, [r1, #128] //load rkey
-    and r8, r9, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r12
-    eor r9, r9, r8
-    orr r8, r9, r10
-    eor r11, r11, r8
-    eor r12, r12, r11
-    eor r10, r10, r12
-    and r8, r9, r10
-    eor r11, r11, r8
-    mvn r12, r12
-    mvn r14, r3, lsl #12 //0x0fff0fff for HALF_ROR
-    and r8, r14, r12, lsr #4
-    and r12, r12, r3
-    orr r12, r8, r12, lsl #12 //HALF_ROR(r12, 4)
-    and r8, r3, r11, lsr #12
-    and r11, r11, r14
-    orr r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
+    movw    r5, 0xe000
+    movt    r5, 0x4001 //load rconst
+    ldrd    r6, r7, [r1, #128] //load rkey
+    and     r8, r9, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r12
+    eor     r9, r9, r8
+    orr     r8, r9, r10
+    eor     r11, r11, r8
+    eor     r12, r12, r11
+    eor     r10, r10, r12
+    and     r8, r9, r10
+    eor     r11, r11, r8
+    mvn     r12, r12
+    mvn     r14, r3, lsl #12 //0x0fff0fff for HALF_ROR
+    and     r8, r14, r12, lsr #4
+    and     r12, r12, r3
+    orr     r12, r8, r12, lsl #12 //HALF_ROR(r12, 4)
+    and     r8, r3, r11, lsr #12
+    and     r11, r11, r14
+    orr     r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
     rev16 r10, r10 //HALF_ROR(r10, 8)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r9, r9, r5 //add rconst
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r9, r9, r5 //add     rconst
     // 3rd round
-    movw r5, 0x0002
-    movt r5, 0x1150 //load rconst
-    ldrd r6, r7, [r1, #136] //load rkey
-    and r8, r12, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r9
-    eor r12, r12, r8
-    orr r8, r12, r10
-    eor r11, r11, r8
-    eor r9, r9, r11
-    eor r10, r10, r9
-    and r8, r12, r10
-    eor r11, r11, r8
-    mvn r9, r9
-    orr r14, r2, r2, lsl #2 //0x55555555 for SWAPMOVE
-    eor r8, r10, r10, lsr #1
-    and r8, r8, r14
-    eor r10, r10, r8
-    eor r10, r10, r8, lsl #1 //SWAPMOVE(r10, r10, 0x55555555, 1)
-    eor r8, r9, r9, lsr #1
-    and r8, r8, r14, lsr #16
-    eor r9, r9, r8
-    eor r9, r9, r8, lsl #1 //SWAPMOVE(r9, r9, 0x00005555, 1)
-    eor r8, r11, r11, lsr #1
-    and r8, r8, r14, lsl #16
-    eor r11, r11, r8
-    eor r11, r11, r8, lsl #1 //SWAPMOVE(r11, r11, 0x55550000, 1)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r7, r11, ror #16 //add 2nd keyword
-    eor r12, r12, r5 //add rconst
+    movw    r5, 0x0002
+    movt    r5, 0x1150 //load rconst
+    ldrd    r6, r7, [r1, #136] //load rkey
+    and     r8, r12, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r9
+    eor     r12, r12, r8
+    orr     r8, r12, r10
+    eor     r11, r11, r8
+    eor     r9, r9, r11
+    eor     r10, r10, r9
+    and     r8, r12, r10
+    eor     r11, r11, r8
+    mvn     r9, r9
+    orr     r14, r2, r2, lsl #2 //0x55555555 for SWAPMOVE
+    eor     r8, r10, r10, lsr #1
+    and     r8, r8, r14
+    eor     r10, r10, r8
+    eor     r10, r10, r8, lsl #1 //SWAPMOVE(r10, r10, 0x55555555, 1)
+    eor     r8, r9, r9, lsr #1
+    and     r8, r8, r14, lsr #16
+    eor     r9, r9, r8
+    eor     r9, r9, r8, lsl #1 //SWAPMOVE(r9, r9, 0x00005555, 1)
+    eor     r8, r11, r11, lsr #1
+    and     r8, r8, r14, lsl #16
+    eor     r11, r11, r8
+    eor     r11, r11, r8, lsl #1 //SWAPMOVE(r11, r11, 0x55550000, 1)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r7, r11, ror #16 //add 2nd keyword
+    eor     r12, r12, r5 //add     rconst
     // 4th round
-    movw r5, 0x0180
-    movt r5, 0x0302 //load rconst
-    ldrd r6, r7, [r1, #144] //load rkey
-    and r8, r11, r9, ror #16 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r12
-    eor r9, r8, r9, ror #16
-    orr r8, r9, r10
-    eor r11, r11, r8
-    eor r12, r12, r11
-    eor r10, r10, r12
-    and r8, r9, r10
-    eor r11, r11, r8
-    mvn r12, r12
-    eor r14, r3, r3, lsl #8 //0x0f0f0f0f for BYTE_ROR
-    and r8, r14, r10, lsr #4
-    and r10, r10, r14
-    orr r10, r8, r10, lsl #4 //BYTE_ROR(r10, 4)
-    orr r14, r14, r14, lsl #2 //0x3f3f3f3f for BYTE_ROR
-    mvn r8, r14
-    and r8, r8, r11, lsl #6
-    and r11, r14, r11, lsr #2
-    orr r11, r11, r8 //BYTE_ROR(r11, 2)
-    mvn r8, r14, lsr #6
-    and r8, r8, r12, lsr #6
-    and r12, r14, r12
-    orr r12, r8, r12, lsl #2 //BYTE_ROR(r12, 6)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r9, r9, r5 //add rconst
+    movw    r5, 0x0180
+    movt    r5, 0x0302 //load rconst
+    ldrd    r6, r7, [r1, #144] //load rkey
+    and     r8, r11, r9, ror #16 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r12
+    eor     r9, r8, r9, ror #16
+    orr     r8, r9, r10
+    eor     r11, r11, r8
+    eor     r12, r12, r11
+    eor     r10, r10, r12
+    and     r8, r9, r10
+    eor     r11, r11, r8
+    mvn     r12, r12
+    eor     r14, r3, r3, lsl #8 //0x0f0f0f0f for BYTE_ROR
+    and     r8, r14, r10, lsr #4
+    and     r10, r10, r14
+    orr     r10, r8, r10, lsl #4 //BYTE_ROR(r10, 4)
+    orr     r14, r14, r14, lsl #2 //0x3f3f3f3f for BYTE_ROR
+    mvn     r8, r14
+    and     r8, r8, r11, lsl #6
+    and     r11, r14, r11, lsr #2
+    orr     r11, r11, r8 //BYTE_ROR(r11, 2)
+    mvn     r8, r14, lsr #6
+    and     r8, r8, r12, lsr #6
+    and     r12, r14, r12
+    orr     r12, r8, r12, lsl #2 //BYTE_ROR(r12, 6)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r9, r9, r5 //add     rconst
     // 5th round
-    movw r5, 0x002b
-    movt r5, 0x8000 //load rconst
-    ldrd r6, r7, [r1, #152] //load rkey
-    and r8, r12, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r9
-    eor r12, r12, r8
-    orr r8, r12, r10
-    eor r11, r11, r8
-    eor r9, r9, r11
-    eor r10, r10, r9
-    and r8, r12, r10
-    eor r11, r11, r8
-    mvn r9, r9
-    eor r10, r6, r10, ror #16 //add 1st keyword
-    eor r11, r7, r11, ror #8 //add 2nd keyword
-    eor r12, r12, r5 //add rconst
+    movw    r5, 0x002b
+    movt    r5, 0x8000 //load rconst
+    ldrd    r6, r7, [r1, #152] //load rkey
+    and     r8, r12, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r9
+    eor     r12, r12, r8
+    orr     r8, r12, r10
+    eor     r11, r11, r8
+    eor     r9, r9, r11
+    eor     r10, r10, r9
+    and     r8, r12, r10
+    eor     r11, r11, r8
+    mvn     r9, r9
+    eor     r10, r6, r10, ror #16 //add 1st keyword
+    eor     r11, r7, r11, ror #8 //add 2nd keyword
+    eor     r12, r12, r5 //add     rconst
 
     // ------------------ 5th QUINTUPLE ROUND ------------------
     // 1st round
-    movw r5, 0x0880
-    movt r5, 0x1008 //load rconst
-    ldrd r6, r7, [r1, #160] //load rkey
-    and r8, r11, r9, ror #24 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r12
-    eor r9, r8, r9, ror #24
-    orr r8, r9, r10
-    eor r11, r11, r8
-    eor r12, r12, r11
-    eor r10, r10, r12
-    and r8, r9, r10
-    eor r11, r11, r8
-    mvn r12, r12
-    and r8, r4, r12, lsr #1
-    and r12, r12, r2
-    orr r12, r8, r12, lsl #3 //NIBBLE_ROR(r12, 1)
-    and r8, r4, r11
-    and r11, r2, r11, lsr #3
-    orr r11, r11, r8, lsl #1 //NIBBLE_ROR(r11, 3)
-    orr r14, r2, r2, lsl #1 //0x33333333 for NIBBLE_ROR
-    and r8, r14, r10, lsr #2
-    and r10, r10, r14
-    orr r10, r8, r10, lsl #2 //NIBBLE_ROR(r10, 2)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r9, r9, r5 //add rconst
+    movw    r5, 0x0880
+    movt    r5, 0x1008 //load rconst
+    ldrd    r6, r7, [r1, #160] //load rkey
+    and     r8, r11, r9, ror #24 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r12
+    eor     r9, r8, r9, ror #24
+    orr     r8, r9, r10
+    eor     r11, r11, r8
+    eor     r12, r12, r11
+    eor     r10, r10, r12
+    and     r8, r9, r10
+    eor     r11, r11, r8
+    mvn     r12, r12
+    and     r8, r4, r12, lsr #1
+    and     r12, r12, r2
+    orr     r12, r8, r12, lsl #3 //NIBBLE_ROR(r12, 1)
+    and     r8, r4, r11
+    and     r11, r2, r11, lsr #3
+    orr     r11, r11, r8, lsl #1 //NIBBLE_ROR(r11, 3)
+    orr     r14, r2, r2, lsl #1 //0x33333333 for NIBBLE_ROR
+    and     r8, r14, r10, lsr #2
+    and     r10, r10, r14
+    orr     r10, r8, r10, lsl #2 //NIBBLE_ROR(r10, 2)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r9, r9, r5 //add     rconst
     // 2nd round
-    movw r5, 0x4000
-    movt r5, 0x6001 //load rconst
-    ldrd r6, r7, [r1, #168] //load rkey
-    and r8, r12, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r9
-    eor r12, r12, r8
-    orr r8, r12, r10
-    eor r11, r11, r8
-    eor r9, r9, r11
-    eor r10, r10, r9
-    and r8, r12, r10
-    eor r11, r11, r8
-    mvn r9, r9
-    mvn r14, r3, lsl #12 //0x0fff0fff for HALF_ROR
-    and r8, r14, r9, lsr #4
-    and r9, r9, r3
-    orr r9, r8, r9, lsl #12 //HALF_ROR(r9, 4)
-    and r8, r3, r11, lsr #12
-    and r11, r11, r14
-    orr r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
+    movw    r5, 0x4000
+    movt    r5, 0x6001 //load rconst
+    ldrd    r6, r7, [r1, #168] //load rkey
+    and     r8, r12, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r9
+    eor     r12, r12, r8
+    orr     r8, r12, r10
+    eor     r11, r11, r8
+    eor     r9, r9, r11
+    eor     r10, r10, r9
+    and     r8, r12, r10
+    eor     r11, r11, r8
+    mvn     r9, r9
+    mvn     r14, r3, lsl #12 //0x0fff0fff for HALF_ROR
+    and     r8, r14, r9, lsr #4
+    and     r9, r9, r3
+    orr     r9, r8, r9, lsl #12 //HALF_ROR(r9, 4)
+    and     r8, r3, r11, lsr #12
+    and     r11, r11, r14
+    orr     r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
     rev16 r10, r10 //HALF_ROR(r10, 8)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r12, r12, r5 //add rconst
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r12, r12, r5 //add     rconst
     // 3rd round
-    movw r5, 0x0002
-    movt r5, 0x0140 //load rconst
-    ldrd r6, r7, [r1, #176] //load rkey
-    and r8, r9, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r12
-    eor r9, r9, r8
-    orr r8, r9, r10
-    eor r11, r11, r8
-    eor r12, r12, r11
-    eor r10, r10, r12
-    and r8, r9, r10
-    eor r11, r11, r8
-    mvn r12, r12
-    orr r14, r2, r2, lsl #2 //0x55555555 for SWAPMOVE
-    eor r8, r10, r10, lsr #1
-    and r8, r8, r14
-    eor r10, r10, r8
-    eor r10, r10, r8, lsl #1 //SWAPMOVE(r10, r10, 0x55555555, 1)
-    eor r8, r12, r12, lsr #1
-    and r8, r8, r14, lsr #16
-    eor r12, r12, r8
-    eor r12, r12, r8, lsl #1 //SWAPMOVE(r12, r12, 0x00005555, 1)
-    eor r8, r11, r11, lsr #1
-    and r8, r8, r14, lsl #16
-    eor r11, r11, r8
-    eor r11, r11, r8, lsl #1 //SWAPMOVE(r11, r11, 0x55550000, 1)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r7, r11, ror #16 //add 2nd keyword
-    eor r9, r9, r5 //add rconst
+    movw    r5, 0x0002
+    movt    r5, 0x0140 //load rconst
+    ldrd    r6, r7, [r1, #176] //load rkey
+    and     r8, r9, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r12
+    eor     r9, r9, r8
+    orr     r8, r9, r10
+    eor     r11, r11, r8
+    eor     r12, r12, r11
+    eor     r10, r10, r12
+    and     r8, r9, r10
+    eor     r11, r11, r8
+    mvn     r12, r12
+    orr     r14, r2, r2, lsl #2 //0x55555555 for SWAPMOVE
+    eor     r8, r10, r10, lsr #1
+    and     r8, r8, r14
+    eor     r10, r10, r8
+    eor     r10, r10, r8, lsl #1 //SWAPMOVE(r10, r10, 0x55555555, 1)
+    eor     r8, r12, r12, lsr #1
+    and     r8, r8, r14, lsr #16
+    eor     r12, r12, r8
+    eor     r12, r12, r8, lsl #1 //SWAPMOVE(r12, r12, 0x00005555, 1)
+    eor     r8, r11, r11, lsr #1
+    and     r8, r8, r14, lsl #16
+    eor     r11, r11, r8
+    eor     r11, r11, r8, lsl #1 //SWAPMOVE(r11, r11, 0x55550000, 1)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r7, r11, ror #16 //add 2nd keyword
+    eor     r9, r9, r5 //add     rconst
     // 4th round
-    movw r5, 0x0080
-    movt r5, 0x0202 //load rconst
-    ldrd r6, r7, [r1, #184] //load rkey
-    and r8, r11, r12, ror #16 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r9
-    eor r12, r8, r12, ror #16
-    orr r8, r12, r10
-    eor r11, r11, r8
-    eor r9, r9, r11
-    eor r10, r10, r9
-    and r8, r12, r10
-    eor r11, r11, r8
-    mvn r9, r9
-    eor r14, r3, r3, lsl #8 //0x0f0f0f0f for BYTE_ROR
-    and r8, r14, r10, lsr #4
-    and r10, r10, r14
-    orr r10, r8, r10, lsl #4 //BYTE_ROR(r10, 4)
-    orr r14, r14, r14, lsl #2 //0x3f3f3f3f for BYTE_ROR
-    mvn r8, r14
-    and r8, r8, r11, lsl #6
-    and r11, r14, r11, lsr #2
-    orr r11, r11, r8 //BYTE_ROR(r11, 2)
-    mvn r8, r14, lsr #6
-    and r8, r8, r9, lsr #6
-    and r9, r14, r9
-    orr r9, r8, r9, lsl #2 //BYTE_ROR(r9, 6)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r12, r12, r5 //add rconst
+    movw    r5, 0x0080
+    movt    r5, 0x0202 //load rconst
+    ldrd    r6, r7, [r1, #184] //load rkey
+    and     r8, r11, r12, ror #16 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r9
+    eor     r12, r8, r12, ror #16
+    orr     r8, r12, r10
+    eor     r11, r11, r8
+    eor     r9, r9, r11
+    eor     r10, r10, r9
+    and     r8, r12, r10
+    eor     r11, r11, r8
+    mvn     r9, r9
+    eor     r14, r3, r3, lsl #8 //0x0f0f0f0f for BYTE_ROR
+    and     r8, r14, r10, lsr #4
+    and     r10, r10, r14
+    orr     r10, r8, r10, lsl #4 //BYTE_ROR(r10, 4)
+    orr     r14, r14, r14, lsl #2 //0x3f3f3f3f for BYTE_ROR
+    mvn     r8, r14
+    and     r8, r8, r11, lsl #6
+    and     r11, r14, r11, lsr #2
+    orr     r11, r11, r8 //BYTE_ROR(r11, 2)
+    mvn     r8, r14, lsr #6
+    and     r8, r8, r9, lsr #6
+    and     r9, r14, r9
+    orr     r9, r8, r9, lsl #2 //BYTE_ROR(r9, 6)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r12, r12, r5 //add     rconst
     // 5th round
-    movw r5, 0x0021
-    movt r5, 0x8000 //load rconst
-    ldrd r6, r7, [r1, #192] //load rkey
-    and r8, r9, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r12
-    eor r9, r9, r8
-    orr r8, r9, r10
-    eor r11, r11, r8
-    eor r12, r12, r11
-    eor r10, r10, r12
-    and r8, r9, r10
-    eor r11, r11, r8
-    mvn r12, r12
-    eor r10, r6, r10, ror #16 //add 1st keyword
-    eor r11, r7, r11, ror #8 //add 2nd keyword
-    eor r9, r9, r5 //add rconst
+    movw    r5, 0x0021
+    movt    r5, 0x8000 //load rconst
+    ldrd    r6, r7, [r1, #192] //load rkey
+    and     r8, r9, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r12
+    eor     r9, r9, r8
+    orr     r8, r9, r10
+    eor     r11, r11, r8
+    eor     r12, r12, r11
+    eor     r10, r10, r12
+    and     r8, r9, r10
+    eor     r11, r11, r8
+    mvn     r12, r12
+    eor     r10, r6, r10, ror #16 //add 1st keyword
+    eor     r11, r7, r11, ror #8 //add 2nd keyword
+    eor     r9, r9, r5 //add     rconst
 
     // ------------------ 6th QUINTUPLE ROUND ------------------
     // 1st round
-    movw r5, 0x0080
-    movt r5, 0x1000 //load rconst
-    ldrd r6, r7, [r1, #200] //load rkey
-    and r8, r11, r12, ror #24 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r9
-    eor r12, r8, r12, ror #24
-    orr r8, r12, r10
-    eor r11, r11, r8
-    eor r9, r9, r11
-    eor r10, r10, r9
-    and r8, r12, r10
-    eor r11, r11, r8
-    mvn r9, r9
-    and r8, r4, r9, lsr #1
-    and r9, r9, r2
-    orr r9, r8, r9, lsl #3 //NIBBLE_ROR(r9, 1)
-    and r8, r4, r11
-    and r11, r2, r11, lsr #3
-    orr r11, r11, r8, lsl #1 //NIBBLE_ROR(r11, 3)
-    orr r14, r2, r2, lsl #1 //0x33333333 for NIBBLE_ROR
-    and r8, r14, r10, lsr #2
-    and r10, r10, r14
-    orr r10, r8, r10, lsl #2 //NIBBLE_ROR(r10, 2)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r12, r12, r5 //add rconst
+    movw    r5, 0x0080
+    movt    r5, 0x1000 //load rconst
+    ldrd    r6, r7, [r1, #200] //load rkey
+    and     r8, r11, r12, ror #24 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r9
+    eor     r12, r8, r12, ror #24
+    orr     r8, r12, r10
+    eor     r11, r11, r8
+    eor     r9, r9, r11
+    eor     r10, r10, r9
+    and     r8, r12, r10
+    eor     r11, r11, r8
+    mvn     r9, r9
+    and     r8, r4, r9, lsr #1
+    and     r9, r9, r2
+    orr     r9, r8, r9, lsl #3 //NIBBLE_ROR(r9, 1)
+    and     r8, r4, r11
+    and     r11, r2, r11, lsr #3
+    orr     r11, r11, r8, lsl #1 //NIBBLE_ROR(r11, 3)
+    orr     r14, r2, r2, lsl #1 //0x33333333 for NIBBLE_ROR
+    and     r8, r14, r10, lsr #2
+    and     r10, r10, r14
+    orr     r10, r8, r10, lsl #2 //NIBBLE_ROR(r10, 2)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r12, r12, r5 //add     rconst
     // 2nd round
-    movw r5, 0xc000
-    movt r5, 0x0001 //load rconst
-    ldrd r6, r7, [r1, #208] //load rkey
-    and r8, r9, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r12
-    eor r9, r9, r8
-    orr r8, r9, r10
-    eor r11, r11, r8
-    eor r12, r12, r11
-    eor r10, r10, r12
-    and r8, r9, r10
-    eor r11, r11, r8
-    mvn r12, r12
-    mvn r14, r3, lsl #12 //0x0fff0fff for HALF_ROR
-    and r8, r14, r12, lsr #4
-    and r12, r12, r3
-    orr r12, r8, r12, lsl #12 //HALF_ROR(r12, 4)
-    and r8, r3, r11, lsr #12
-    and r11, r11, r14
-    orr r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
+    movw    r5, 0xc000
+    movt    r5, 0x0001 //load rconst
+    ldrd    r6, r7, [r1, #208] //load rkey
+    and     r8, r9, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r12
+    eor     r9, r9, r8
+    orr     r8, r9, r10
+    eor     r11, r11, r8
+    eor     r12, r12, r11
+    eor     r10, r10, r12
+    and     r8, r9, r10
+    eor     r11, r11, r8
+    mvn     r12, r12
+    mvn     r14, r3, lsl #12 //0x0fff0fff for HALF_ROR
+    and     r8, r14, r12, lsr #4
+    and     r12, r12, r3
+    orr     r12, r8, r12, lsl #12 //HALF_ROR(r12, 4)
+    and     r8, r3, r11, lsr #12
+    and     r11, r11, r14
+    orr     r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
     rev16 r10, r10 //HALF_ROR(r10, 8)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r9, r9, r5 //add rconst
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r9, r9, r5 //add     rconst
     // 3rd round
-    movw r5, 0x0002
-    movt r5, 0x5100 //load rconst
-    ldrd r6, r7, [r1, #216] //load rkey
-    and r8, r12, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r9
-    eor r12, r12, r8
-    orr r8, r12, r10
-    eor r11, r11, r8
-    eor r9, r9, r11
-    eor r10, r10, r9
-    and r8, r12, r10
-    eor r11, r11, r8
-    mvn r9, r9
-    orr r14, r2, r2, lsl #2 //0x55555555 for SWAPMOVE
-    eor r8, r10, r10, lsr #1
-    and r8, r8, r14
-    eor r10, r10, r8
-    eor r10, r10, r8, lsl #1 //SWAPMOVE(r10, r10, 0x55555555, 1)
-    eor r8, r9, r9, lsr #1
-    and r8, r8, r14, lsr #16
-    eor r9, r9, r8
-    eor r9, r9, r8, lsl #1 //SWAPMOVE(r9, r9, 0x00005555, 1)
-    eor r8, r11, r11, lsr #1
-    and r8, r8, r14, lsl #16
-    eor r11, r11, r8
-    eor r11, r11, r8, lsl #1 //SWAPMOVE(r11, r11, 0x55550000, 1)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r7, r11, ror #16 //add 2nd keyword
-    eor r12, r12, r5 //add rconst
+    movw    r5, 0x0002
+    movt    r5, 0x5100 //load rconst
+    ldrd    r6, r7, [r1, #216] //load rkey
+    and     r8, r12, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r9
+    eor     r12, r12, r8
+    orr     r8, r12, r10
+    eor     r11, r11, r8
+    eor     r9, r9, r11
+    eor     r10, r10, r9
+    and     r8, r12, r10
+    eor     r11, r11, r8
+    mvn     r9, r9
+    orr     r14, r2, r2, lsl #2 //0x55555555 for SWAPMOVE
+    eor     r8, r10, r10, lsr #1
+    and     r8, r8, r14
+    eor     r10, r10, r8
+    eor     r10, r10, r8, lsl #1 //SWAPMOVE(r10, r10, 0x55555555, 1)
+    eor     r8, r9, r9, lsr #1
+    and     r8, r8, r14, lsr #16
+    eor     r9, r9, r8
+    eor     r9, r9, r8, lsl #1 //SWAPMOVE(r9, r9, 0x00005555, 1)
+    eor     r8, r11, r11, lsr #1
+    and     r8, r8, r14, lsl #16
+    eor     r11, r11, r8
+    eor     r11, r11, r8, lsl #1 //SWAPMOVE(r11, r11, 0x55550000, 1)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r7, r11, ror #16 //add 2nd keyword
+    eor     r12, r12, r5 //add     rconst
     // 4th round
-    movw r5, 0x0180
-    movt r5, 0x0301 //load rconst
-    ldrd r6, r7, [r1, #224] //load rkey
-    and r8, r11, r9, ror #16 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r12
-    eor r9, r8, r9, ror #16
-    orr r8, r9, r10
-    eor r11, r11, r8
-    eor r12, r12, r11
-    eor r10, r10, r12
-    and r8, r9, r10
-    eor r11, r11, r8
-    mvn r12, r12
-    eor r14, r3, r3, lsl #8 //0x0f0f0f0f for BYTE_ROR
-    and r8, r14, r10, lsr #4
-    and r10, r10, r14
-    orr r10, r8, r10, lsl #4 //BYTE_ROR(r10, 4)
-    orr r14, r14, r14, lsl #2 //0x3f3f3f3f for BYTE_ROR
-    mvn r8, r14
-    and r8, r8, r11, lsl #6
-    and r11, r14, r11, lsr #2
-    orr r11, r11, r8 //BYTE_ROR(r11, 2)
-    mvn r8, r14, lsr #6
-    and r8, r8, r12, lsr #6
-    and r12, r14, r12
-    orr r12, r8, r12, lsl #2 //BYTE_ROR(r12, 6)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r9, r9, r5 //add rconst
+    movw    r5, 0x0180
+    movt    r5, 0x0301 //load rconst
+    ldrd    r6, r7, [r1, #224] //load rkey
+    and     r8, r11, r9, ror #16 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r12
+    eor     r9, r8, r9, ror #16
+    orr     r8, r9, r10
+    eor     r11, r11, r8
+    eor     r12, r12, r11
+    eor     r10, r10, r12
+    and     r8, r9, r10
+    eor     r11, r11, r8
+    mvn     r12, r12
+    eor     r14, r3, r3, lsl #8 //0x0f0f0f0f for BYTE_ROR
+    and     r8, r14, r10, lsr #4
+    and     r10, r10, r14
+    orr     r10, r8, r10, lsl #4 //BYTE_ROR(r10, 4)
+    orr     r14, r14, r14, lsl #2 //0x3f3f3f3f for BYTE_ROR
+    mvn     r8, r14
+    and     r8, r8, r11, lsl #6
+    and     r11, r14, r11, lsr #2
+    orr     r11, r11, r8 //BYTE_ROR(r11, 2)
+    mvn     r8, r14, lsr #6
+    and     r8, r8, r12, lsr #6
+    and     r12, r14, r12
+    orr     r12, r8, r12, lsl #2 //BYTE_ROR(r12, 6)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r9, r9, r5 //add     rconst
     // 5th round
-    movw r5, 0x002e
-    movt r5, 0x8000 //load rconst
-    ldrd r6, r7, [r1, #232] //load rkey
-    and r8, r12, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r9
-    eor r12, r12, r8
-    orr r8, r12, r10
-    eor r11, r11, r8
-    eor r9, r9, r11
-    eor r10, r10, r9
-    and r8, r12, r10
-    eor r11, r11, r8
-    mvn r9, r9
-    eor r10, r6, r10, ror #16 //add 1st keyword
-    eor r11, r7, r11, ror #8 //add 2nd keyword
-    eor r12, r12, r5 //add rconst
+    movw    r5, 0x002e
+    movt    r5, 0x8000 //load rconst
+    ldrd    r6, r7, [r1, #232] //load rkey
+    and     r8, r12, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r9
+    eor     r12, r12, r8
+    orr     r8, r12, r10
+    eor     r11, r11, r8
+    eor     r9, r9, r11
+    eor     r10, r10, r9
+    and     r8, r12, r10
+    eor     r11, r11, r8
+    mvn     r9, r9
+    eor     r10, r6, r10, ror #16 //add 1st keyword
+    eor     r11, r7, r11, ror #8 //add 2nd keyword
+    eor     r12, r12, r5 //add     rconst
 
 
     // ------------------ 7th QUINTUPLE ROUND ------------------
     // 1st round
-    movw r5, 0x8800
-    movt r5, 0x1008 //load rconst
-    ldrd r6, r7, [r1, #240] //load rkey
-    and r8, r11, r9, ror #24 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r12
-    eor r9, r8, r9, ror #24
-    orr r8, r9, r10
-    eor r11, r11, r8
-    eor r12, r12, r11
-    eor r10, r10, r12
-    and r8, r9, r10
-    eor r11, r11, r8
-    mvn r12, r12
-    and r8, r4, r12, lsr #1
-    and r12, r12, r2
-    orr r12, r8, r12, lsl #3 //NIBBLE_ROR(r12, 1)
-    and r8, r4, r11
-    and r11, r2, r11, lsr #3
-    orr r11, r11, r8, lsl #1 //NIBBLE_ROR(r11, 3)
-    orr r14, r2, r2, lsl #1 //0x33333333 for NIBBLE_ROR
-    and r8, r14, r10, lsr #2
-    and r10, r10, r14
-    orr r10, r8, r10, lsl #2 //NIBBLE_ROR(r10, 2)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r9, r9, r5 //add rconst
+    movw    r5, 0x8800
+    movt    r5, 0x1008 //load rconst
+    ldrd    r6, r7, [r1, #240] //load rkey
+    and     r8, r11, r9, ror #24 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r12
+    eor     r9, r8, r9, ror #24
+    orr     r8, r9, r10
+    eor     r11, r11, r8
+    eor     r12, r12, r11
+    eor     r10, r10, r12
+    and     r8, r9, r10
+    eor     r11, r11, r8
+    mvn     r12, r12
+    and     r8, r4, r12, lsr #1
+    and     r12, r12, r2
+    orr     r12, r8, r12, lsl #3 //NIBBLE_ROR(r12, 1)
+    and     r8, r4, r11
+    and     r11, r2, r11, lsr #3
+    orr     r11, r11, r8, lsl #1 //NIBBLE_ROR(r11, 3)
+    orr     r14, r2, r2, lsl #1 //0x33333333 for NIBBLE_ROR
+    and     r8, r14, r10, lsr #2
+    and     r10, r10, r14
+    orr     r10, r8, r10, lsl #2 //NIBBLE_ROR(r10, 2)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r9, r9, r5 //add     rconst
     // 2nd round
-    movw r5, 0x2000
-    movt r5, 0x6001 //load rconst
-    ldrd r6, r7, [r1, #248] //load rkey
-    and r8, r12, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r9
-    eor r12, r12, r8
-    orr r8, r12, r10
-    eor r11, r11, r8
-    eor r9, r9, r11
-    eor r10, r10, r9
-    and r8, r12, r10
-    eor r11, r11, r8
-    mvn r9, r9
-    mvn r14, r3, lsl #12 //0x0fff0fff for HALF_ROR
-    and r8, r14, r9, lsr #4
-    and r9, r9, r3
-    orr r9, r8, r9, lsl #12 //HALF_ROR(r9, 4)
-    and r8, r3, r11, lsr #12
-    and r11, r11, r14
-    orr r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
+    movw    r5, 0x2000
+    movt    r5, 0x6001 //load rconst
+    ldrd    r6, r7, [r1, #248] //load rkey
+    and     r8, r12, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r9
+    eor     r12, r12, r8
+    orr     r8, r12, r10
+    eor     r11, r11, r8
+    eor     r9, r9, r11
+    eor     r10, r10, r9
+    and     r8, r12, r10
+    eor     r11, r11, r8
+    mvn     r9, r9
+    mvn     r14, r3, lsl #12 //0x0fff0fff for HALF_ROR
+    and     r8, r14, r9, lsr #4
+    and     r9, r9, r3
+    orr     r9, r8, r9, lsl #12 //HALF_ROR(r9, 4)
+    and     r8, r3, r11, lsr #12
+    and     r11, r11, r14
+    orr     r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
     rev16 r10, r10 //HALF_ROR(r10, 8)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r12, r12, r5 //add rconst
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r12, r12, r5 //add     rconst
     // 3rd round
-    movw r5, 0x0002
-    movt r5, 0x4050 //load rconst
-    ldrd r6, r7, [r1, #256] //load rkey
-    and r8, r9, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r12
-    eor r9, r9, r8
-    orr r8, r9, r10
-    eor r11, r11, r8
-    eor r12, r12, r11
-    eor r10, r10, r12
-    and r8, r9, r10
-    eor r11, r11, r8
-    mvn r12, r12
-    orr r14, r2, r2, lsl #2 //0x55555555 for SWAPMOVE
-    eor r8, r10, r10, lsr #1
-    and r8, r8, r14
-    eor r10, r10, r8
-    eor r10, r10, r8, lsl #1 //SWAPMOVE(r10, r10, 0x55555555, 1)
-    eor r8, r12, r12, lsr #1
-    and r8, r8, r14, lsr #16
-    eor r12, r12, r8
-    eor r12, r12, r8, lsl #1 //SWAPMOVE(r12, r12, 0x00005555, 1)
-    eor r8, r11, r11, lsr #1
-    and r8, r8, r14, lsl #16
-    eor r11, r11, r8
-    eor r11, r11, r8, lsl #1 //SWAPMOVE(r11, r11, 0x55550000, 1)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r7, r11, ror #16 //add 2nd keyword
-    eor r9, r9, r5 //add rconst
+    movw    r5, 0x0002
+    movt    r5, 0x4050 //load rconst
+    ldrd    r6, r7, [r1, #256] //load rkey
+    and     r8, r9, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r12
+    eor     r9, r9, r8
+    orr     r8, r9, r10
+    eor     r11, r11, r8
+    eor     r12, r12, r11
+    eor     r10, r10, r12
+    and     r8, r9, r10
+    eor     r11, r11, r8
+    mvn     r12, r12
+    orr     r14, r2, r2, lsl #2 //0x55555555 for SWAPMOVE
+    eor     r8, r10, r10, lsr #1
+    and     r8, r8, r14
+    eor     r10, r10, r8
+    eor     r10, r10, r8, lsl #1 //SWAPMOVE(r10, r10, 0x55555555, 1)
+    eor     r8, r12, r12, lsr #1
+    and     r8, r8, r14, lsr #16
+    eor     r12, r12, r8
+    eor     r12, r12, r8, lsl #1 //SWAPMOVE(r12, r12, 0x00005555, 1)
+    eor     r8, r11, r11, lsr #1
+    and     r8, r8, r14, lsl #16
+    eor     r11, r11, r8
+    eor     r11, r11, r8, lsl #1 //SWAPMOVE(r11, r11, 0x55550000, 1)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r7, r11, ror #16 //add 2nd keyword
+    eor     r9, r9, r5 //add     rconst
     // 4th round
-    movw r5, 0x0080
-    movt r5, 0x0103 //load rconst
-    ldrd r6, r7, [r1, #264] //load rkey
-    and r8, r11, r12, ror #16 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r9
-    eor r12, r8, r12, ror #16
-    orr r8, r12, r10
-    eor r11, r11, r8
-    eor r9, r9, r11
-    eor r10, r10, r9
-    and r8, r12, r10
-    eor r11, r11, r8
-    mvn r9, r9
-    eor r14, r3, r3, lsl #8 //0x0f0f0f0f for BYTE_ROR
-    and r8, r14, r10, lsr #4
-    and r10, r10, r14
-    orr r10, r8, r10, lsl #4 //BYTE_ROR(r10, 4)
-    orr r14, r14, r14, lsl #2 //0x3f3f3f3f for BYTE_ROR
-    mvn r8, r14
-    and r8, r8, r11, lsl #6
-    and r11, r14, r11, lsr #2
-    orr r11, r11, r8 //BYTE_ROR(r11, 2)
-    mvn r8, r14, lsr #6
-    and r8, r8, r9, lsr #6
-    and r9, r14, r9
-    orr r9, r8, r9, lsl #2 //BYTE_ROR(r9, 6)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r12, r12, r5 //add rconst
+    movw    r5, 0x0080
+    movt    r5, 0x0103 //load rconst
+    ldrd    r6, r7, [r1, #264] //load rkey
+    and     r8, r11, r12, ror #16 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r9
+    eor     r12, r8, r12, ror #16
+    orr     r8, r12, r10
+    eor     r11, r11, r8
+    eor     r9, r9, r11
+    eor     r10, r10, r9
+    and     r8, r12, r10
+    eor     r11, r11, r8
+    mvn     r9, r9
+    eor     r14, r3, r3, lsl #8 //0x0f0f0f0f for BYTE_ROR
+    and     r8, r14, r10, lsr #4
+    and     r10, r10, r14
+    orr     r10, r8, r10, lsl #4 //BYTE_ROR(r10, 4)
+    orr     r14, r14, r14, lsl #2 //0x3f3f3f3f for BYTE_ROR
+    mvn     r8, r14
+    and     r8, r8, r11, lsl #6
+    and     r11, r14, r11, lsr #2
+    orr     r11, r11, r8 //BYTE_ROR(r11, 2)
+    mvn     r8, r14, lsr #6
+    and     r8, r8, r9, lsr #6
+    and     r9, r14, r9
+    orr     r9, r8, r9, lsl #2 //BYTE_ROR(r9, 6)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r12, r12, r5 //add     rconst
     // 5th round
-    movw r5, 0x0006
-    movt r5, 0x8000 //load rconst
-    ldrd r6, r7, [r1, #272] //load rkey
-    and r8, r9, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r12
-    eor r9, r9, r8
-    orr r8, r9, r10
-    eor r11, r11, r8
-    eor r12, r12, r11
-    eor r10, r10, r12
-    and r8, r9, r10
-    eor r11, r11, r8
-    mvn r12, r12
-    eor r10, r6, r10, ror #16 //add 1st keyword
-    eor r11, r7, r11, ror #8 //add 2nd keyword
-    eor r9, r9, r5 //add rconst
+    movw    r5, 0x0006
+    movt    r5, 0x8000 //load rconst
+    ldrd    r6, r7, [r1, #272] //load rkey
+    and     r8, r9, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r12
+    eor     r9, r9, r8
+    orr     r8, r9, r10
+    eor     r11, r11, r8
+    eor     r12, r12, r11
+    eor     r10, r10, r12
+    and     r8, r9, r10
+    eor     r11, r11, r8
+    mvn     r12, r12
+    eor     r10, r6, r10, ror #16 //add 1st keyword
+    eor     r11, r7, r11, ror #8 //add 2nd keyword
+    eor     r9, r9, r5 //add     rconst
 
     // ------------------ 8th QUINTUPLE ROUND ------------------
     // 1st round
-    movw r5, 0x8808
-    movt r5, 0x1000 //load rconst
-    ldrd r6, r7, [r1, #280] //load rkey
-    and r8, r11, r12, ror #24 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r9
-    eor r12, r8, r12, ror #24
-    orr r8, r12, r10
-    eor r11, r11, r8
-    eor r9, r9, r11
-    eor r10, r10, r9
-    and r8, r12, r10
-    eor r11, r11, r8
-    mvn r9, r9
-    and r8, r4, r9, lsr #1
-    and r9, r9, r2
-    orr r9, r8, r9, lsl #3 //NIBBLE_ROR(r9, 1)
-    and r8, r4, r11
-    and r11, r2, r11, lsr #3
-    orr r11, r11, r8, lsl #1 //NIBBLE_ROR(r11, 3)
-    orr r14, r2, r2, lsl #1 //0x33333333 for NIBBLE_ROR
-    and r8, r14, r10, lsr #2
-    and r10, r10, r14
-    orr r10, r8, r10, lsl #2 //NIBBLE_ROR(r10, 2)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r12, r12, r5 //add rconst
+    movw    r5, 0x8808
+    movt    r5, 0x1000 //load rconst
+    ldrd    r6, r7, [r1, #280] //load rkey
+    and     r8, r11, r12, ror #24 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r9
+    eor     r12, r8, r12, ror #24
+    orr     r8, r12, r10
+    eor     r11, r11, r8
+    eor     r9, r9, r11
+    eor     r10, r10, r9
+    and     r8, r12, r10
+    eor     r11, r11, r8
+    mvn     r9, r9
+    and     r8, r4, r9, lsr #1
+    and     r9, r9, r2
+    orr     r9, r8, r9, lsl #3 //NIBBLE_ROR(r9, 1)
+    and     r8, r4, r11
+    and     r11, r2, r11, lsr #3
+    orr     r11, r11, r8, lsl #1 //NIBBLE_ROR(r11, 3)
+    orr     r14, r2, r2, lsl #1 //0x33333333 for NIBBLE_ROR
+    and     r8, r14, r10, lsr #2
+    and     r10, r10, r14
+    orr     r10, r8, r10, lsl #2 //NIBBLE_ROR(r10, 2)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r12, r12, r5 //add     rconst
     // 2nd round
-    movw r5, 0xa000
-    movt r5, 0xc001 //load rconst
-    ldrd r6, r7, [r1, #288] //load rkey
-    and r8, r9, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r12
-    eor r9, r9, r8
-    orr r8, r9, r10
-    eor r11, r11, r8
-    eor r12, r12, r11
-    eor r10, r10, r12
-    and r8, r9, r10
-    eor r11, r11, r8
-    mvn r12, r12
-    mvn r14, r3, lsl #12 //0x0fff0fff for HALF_ROR
-    and r8, r14, r12, lsr #4
-    and r12, r12, r3
-    orr r12, r8, r12, lsl #12 //HALF_ROR(r12, 4)
-    and r8, r3, r11, lsr #12
-    and r11, r11, r14
-    orr r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
+    movw    r5, 0xa000
+    movt    r5, 0xc001 //load rconst
+    ldrd    r6, r7, [r1, #288] //load rkey
+    and     r8, r9, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r12
+    eor     r9, r9, r8
+    orr     r8, r9, r10
+    eor     r11, r11, r8
+    eor     r12, r12, r11
+    eor     r10, r10, r12
+    and     r8, r9, r10
+    eor     r11, r11, r8
+    mvn     r12, r12
+    mvn     r14, r3, lsl #12 //0x0fff0fff for HALF_ROR
+    and     r8, r14, r12, lsr #4
+    and     r12, r12, r3
+    orr     r12, r8, r12, lsl #12 //HALF_ROR(r12, 4)
+    and     r8, r3, r11, lsr #12
+    and     r11, r11, r14
+    orr     r11, r8, r11, lsl #4 //HALF_ROR(r11, 12)
     rev16 r10, r10 //HALF_ROR(r10, 8)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r9, r9, r5 //add rconst
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r9, r9, r5 //add     rconst
     // 3rd round
-    movw r5, 0x0002
-    movt r5, 0x1450 //load rconst
-    ldrd r6, r7, [r1, #296] //load rkey
-    and r8, r12, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r9
-    eor r12, r12, r8
-    orr r8, r12, r10
-    eor r11, r11, r8
-    eor r9, r9, r11
-    eor r10, r10, r9
-    and r8, r12, r10
-    eor r11, r11, r8
-    mvn r9, r9
-    orr r14, r2, r2, lsl #2 //0x55555555 for SWAPMOVE
-    eor r8, r10, r10, lsr #1
-    and r8, r8, r14
-    eor r10, r10, r8
-    eor r10, r10, r8, lsl #1 //SWAPMOVE(r10, r10, 0x55555555, 1)
-    eor r8, r9, r9, lsr #1
-    and r8, r8, r14, lsr #16
-    eor r9, r9, r8
-    eor r9, r9, r8, lsl #1 //SWAPMOVE(r9, r9, 0x00005555, 1)
-    eor r8, r11, r11, lsr #1
-    and r8, r8, r14, lsl #16
-    eor r11, r11, r8
-    eor r11, r11, r8, lsl #1 //SWAPMOVE(r11, r11, 0x55550000, 1)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r7, r11, ror #16 //add 2nd keyword
-    eor r12, r12, r5 //add rconst
+    movw    r5, 0x0002
+    movt    r5, 0x1450 //load rconst
+    ldrd    r6, r7, [r1, #296] //load rkey
+    and     r8, r12, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r9
+    eor     r12, r12, r8
+    orr     r8, r12, r10
+    eor     r11, r11, r8
+    eor     r9, r9, r11
+    eor     r10, r10, r9
+    and     r8, r12, r10
+    eor     r11, r11, r8
+    mvn     r9, r9
+    orr     r14, r2, r2, lsl #2 //0x55555555 for SWAPMOVE
+    eor     r8, r10, r10, lsr #1
+    and     r8, r8, r14
+    eor     r10, r10, r8
+    eor     r10, r10, r8, lsl #1 //SWAPMOVE(r10, r10, 0x55555555, 1)
+    eor     r8, r9, r9, lsr #1
+    and     r8, r8, r14, lsr #16
+    eor     r9, r9, r8
+    eor     r9, r9, r8, lsl #1 //SWAPMOVE(r9, r9, 0x00005555, 1)
+    eor     r8, r11, r11, lsr #1
+    and     r8, r8, r14, lsl #16
+    eor     r11, r11, r8
+    eor     r11, r11, r8, lsl #1 //SWAPMOVE(r11, r11, 0x55550000, 1)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r7, r11, ror #16 //add 2nd keyword
+    eor     r12, r12, r5 //add     rconst
     // 4th round
-    movw r5, 0x0181
-    movt r5, 0x0102 //load rconst
-    ldrd r6, r7, [r1, #304] //load rkey
-    and r8, r11, r9, ror #16 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r12
-    eor r9, r8, r9, ror #16
-    orr r8, r9, r10
-    eor r11, r11, r8
-    eor r12, r12, r11
-    eor r10, r10, r12
-    and r8, r9, r10
-    eor r11, r11, r8
-    mvn r12, r12
-    eor r14, r3, r3, lsl #8 //0x0f0f0f0f for BYTE_ROR
-    and r8, r14, r10, lsr #4
-    and r10, r10, r14
-    orr r10, r8, r10, lsl #4 //BYTE_ROR(r10, 4)
-    orr r14, r14, r14, lsl #2 //0x3f3f3f3f for BYTE_ROR
-    mvn r8, r14
-    and r8, r8, r11, lsl #6
-    and r11, r14, r11, lsr #2
-    orr r11, r11, r8 //BYTE_ROR(r11, 2)
-    mvn r8, r14, lsr #6
-    and r8, r8, r12, lsr #6
-    and r12, r14, r12
-    orr r12, r8, r12, lsl #2 //BYTE_ROR(r12, 6)
-    eor r10, r10, r6 //add 1st keyword
-    eor r11, r11, r7 //add 2nd keyword
-    eor r9, r9, r5 //add rconst
+    movw    r5, 0x0181
+    movt    r5, 0x0102 //load rconst
+    ldrd    r6, r7, [r1, #304] //load rkey
+    and     r8, r11, r9, ror #16 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r12
+    eor     r9, r8, r9, ror #16
+    orr     r8, r9, r10
+    eor     r11, r11, r8
+    eor     r12, r12, r11
+    eor     r10, r10, r12
+    and     r8, r9, r10
+    eor     r11, r11, r8
+    mvn     r12, r12
+    eor     r14, r3, r3, lsl #8 //0x0f0f0f0f for BYTE_ROR
+    and     r8, r14, r10, lsr #4
+    and     r10, r10, r14
+    orr     r10, r8, r10, lsl #4 //BYTE_ROR(r10, 4)
+    orr     r14, r14, r14, lsl #2 //0x3f3f3f3f for BYTE_ROR
+    mvn     r8, r14
+    and     r8, r8, r11, lsl #6
+    and     r11, r14, r11, lsr #2
+    orr     r11, r11, r8 //BYTE_ROR(r11, 2)
+    mvn     r8, r14, lsr #6
+    and     r8, r8, r12, lsr #6
+    and     r12, r14, r12
+    orr     r12, r8, r12, lsl #2 //BYTE_ROR(r12, 6)
+    eor     r10, r10, r6 //add 1st keyword
+    eor     r11, r11, r7 //add 2nd keyword
+    eor     r9, r9, r5 //add     rconst
     // 5th round
-    movw r5, 0x001a
-    movt r5, 0x8000 //load rconst
-    ldrd r6, r7, [r1, #312] //load rkey
-    and r8, r12, r11 //sbox layer
-    eor r10, r10, r8
-    and r8, r10, r9
-    eor r12, r12, r8
-    orr r8, r12, r10
-    eor r11, r11, r8
-    eor r9, r9, r11
-    eor r10, r10, r9
-    and r8, r12, r10
-    eor r11, r11, r8
-    mvn r9, r9, ror #24
-    eor r10, r6, r10, ror #16 //add 1st keyword
-    eor r11, r7, r11, ror #8 //add 2nd keyword
-    eor r12, r12, r5 //add rconst
-
+    movw    r5, 0x001a
+    movt    r5, 0x8000 //load rconst
+    ldrd    r6, r7, [r1, #312] //load rkey
+    and     r8, r12, r11 //sbox layer
+    eor     r10, r10, r8
+    and     r8, r10, r9
+    eor     r12, r12, r8
+    orr     r8, r12, r10
+    eor     r11, r11, r8
+    eor     r9, r9, r11
+    eor     r10, r10, r9
+    and     r8, r12, r10
+    eor     r11, r11, r8
+    mvn     r9, r9, ror #24
+    eor     r10, r6, r10, ror #16 //add 1st keyword
+    eor     r11, r7, r11, ror #8 //add 2nd keyword
+    eor     r12, r12, r5 //add     rconst
     // endianness
-    rev r9, r9
-    rev r10, r10
-    rev r11, r11
-    rev r12, r12
-
-    stm r0, {r9-r12}
-    pop {r2-r12,r14}
-    bx lr
-    
+    rev     r9, r9
+    rev     r10, r10
+    rev     r11, r11
+    rev     r12, r12
+    stm     r0, {r9-r12}
+    pop     {r2-r12,r14}
+    bx      lr
