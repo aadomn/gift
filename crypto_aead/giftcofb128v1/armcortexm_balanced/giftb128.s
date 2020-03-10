@@ -1,6 +1,6 @@
 /****************************************************************************
-* Compact ARM assembly implementation of the GIFT-128 block cipher. This
-* implementation focuses on code size rather than speed.
+* Balanced ARM assembly implementation of the GIFT-128 block cipher. This
+* implementation provides efficiency with limited impact on the code size.
 * See "Fixslicing: A New GIFT Representation" paper available at 
 * https:// for more details.
 ****************************************************************************/
@@ -477,11 +477,11 @@ key_update_4:
     str.w   r5, [r1], #80
     bx      lr
 
-.align 2
 /*****************************************************************************
-* Fully unrolled ARM assembly implementation of the GIFT-128 key schedule 
-* according to the new representation.
+* Balanced implementation of the GIFT-128 key schedule according to the 
+* fixsliced representation.
 *****************************************************************************/
+.align 2
 @ void gift128_keyschedule(const u8* key, u32* rkey) {
 .global gift128_keyschedule
 .type   gift128_keyschedule,%function
@@ -730,6 +730,7 @@ quintuple_round:
 * Balanced ARM assembly implementation of the GIFTb-128 block cipher.
 * This function simply encrypts a 128-bit block, without any operation mode.
 *****************************************************************************/
+.align 2
 @ void giftb128_encrypt_block(u8 *out, const u32* rkey, const u8 *block)
 .global giftb128_encrypt_block
 .type   giftb128_encrypt_block,%function
