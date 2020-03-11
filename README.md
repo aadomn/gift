@@ -16,7 +16,7 @@ For each algorithm, one can find:
 - `armcortexm_fast`: Fully unrolled ARM assembly implementation for Cortex-M processors (speed optimized)
 - `armcortexm_compact`: Compact ARM assembly implementation for Cortex-M processors (code size optimized)
 - `armcortexm_balanced`: Balanced assembly implementation for Cortex-M processors (globally efficient with limited impact on code size)
-- `armcortexm4_masked`: First-order masked implementation for Cortex-M4 processors :warning: No practical evaluations have been undertaken to assess its security! Please do so if you plan to use it to thwart power/electromagnetic side-channel attacks! :warning: 
+- `armcortexm4_masked`: First-order masked implementation for Cortex-M4 processors :warning: No practical evaluation has been undertaken to assess its security! Please do so if you plan to use it to thwart power/electromagnetic side-channel attacks! :warning: 
 
 # Interface
 
