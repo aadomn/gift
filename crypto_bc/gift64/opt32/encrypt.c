@@ -4,8 +4,8 @@
 * @author	Alexandre Adomnicai, Nanyang Technological University,
 *			alexandre.adomnicai@ntu.edu.sg
 *
-* @date		January 2020
- ******************************************************************************/
+* @date		March 2020
+*******************************************************************************/
 #include "encrypt.h"
 #include "endian.h"
 #include "gift64.h"
@@ -60,6 +60,56 @@ void rearrange_key(u32* rkey, const u8* key) {
 	rkey[7] = REARRANGE_KEYWORD_2_3(key[0], key[1]);
 	rkey[6] |= (rkey[6] << 4);
 	rkey[7] |= (rkey[7] << 4);
+	rkey[6] ^= 0xffffffff;
+}
+
+/****************************************************************************
+* Rearranges the keys 'key0' and 'key1' to match the GIFT-64 fixsliced 
+* representation. Same as 'rearrange_key' but with 2 different keys so that 
+* cryptographic primitives based on GIFT-64 that need encrypt several blocks
+* with different keys (e.g. LOTUS) can take advantage of fixslicing.
+****************************************************************************/
+void rearrange_keys(u32* rkey, const u8* key0, const u8* key1) {
+	u32 tmp;
+	// key words W6 and W7
+	rkey[0] = REARRANGE_KEYWORD_0_1(key0[14], key0[15]);
+	tmp 	= REARRANGE_KEYWORD_0_1(key1[14], key1[15]);
+	rkey[0] |= 	(tmp << 4); 	// interleave (nibble-wise) the 2 key words
+	rkey[1] = REARRANGE_KEYWORD_0_1(key0[12], key0[13]);
+	tmp 	= REARRANGE_KEYWORD_0_1(key1[12], key1[13]);
+	rkey[1] |= 	(tmp << 4);		// interleave (nibble-wise) the 2 key words
+	TRANSPOSE_U32(rkey[0]);
+	TRANSPOSE_U32(rkey[1]);
+	rkey[0] ^= 0xffffffff; 		// to save 1 operation in sbox computations
+	// key words W4 and W5
+	rkey[2] = REARRANGE_KEYWORD_0_1(key0[10], key0[11]);
+	tmp 	= REARRANGE_KEYWORD_0_1(key1[10], key1[11]);
+	rkey[2] |= 	(tmp << 4);
+	rkey[3] = REARRANGE_KEYWORD_0_1(key0[8], key0[9]);
+	tmp 	= REARRANGE_KEYWORD_0_1(key1[8], key1[9]);
+	rkey[3] |= 	(tmp << 4);
+	rkey[2] ^= 0xffffffff;
+	SWAPMOVE(rkey[2], rkey[2], 0x22222222, 2);
+	SWAPMOVE(rkey[3], rkey[3], 0x22222222, 2);
+	// key words W2 and W3
+	rkey[4] = REARRANGE_KEYWORD_2_3(key0[6], key0[7]);
+	tmp 	= REARRANGE_KEYWORD_2_3(key1[6], key1[7]);
+	rkey[4] |= 	(tmp << 4);
+	rkey[5] = REARRANGE_KEYWORD_2_3(key0[4], key0[5]);
+	tmp 	= REARRANGE_KEYWORD_2_3(key1[4], key1[5]);
+	rkey[5] |= 	(tmp << 4);
+	TRANSPOSE_U32(rkey[4]);
+	TRANSPOSE_U32(rkey[5]);
+	SWAPMOVE(rkey[4], rkey[4], 0x0000ff00, 16);
+	SWAPMOVE(rkey[5], rkey[5], 0x0000ff00, 16);
+	rkey[4] ^= 0xffffffff;
+	// key words W0 and W1
+	rkey[6] = REARRANGE_KEYWORD_2_3(key0[2], key0[3]);
+	tmp 	= REARRANGE_KEYWORD_2_3(key1[2], key1[3]);
+	rkey[6] |= 	(tmp << 4);
+	rkey[7] = REARRANGE_KEYWORD_2_3(key0[0], key0[1]);
+	tmp 	= REARRANGE_KEYWORD_2_3(key1[0], key1[1]);
+	rkey[7] |= 	(tmp << 4);
 	rkey[6] ^= 0xffffffff;
 }
 
