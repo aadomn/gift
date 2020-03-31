@@ -71,7 +71,7 @@ static inline void rho(u32* y, u32* m, u32* x, u32* c, u32 n) {
     rho1(x, y, m, n);
 }
 
-static inline void rho_prime(u32* y, u32*c, u32* m, u32* x, u32 n) {
+static inline void rho_prime(u32* y, u32*c, u32* x, u32* m, u32 n) {
     XOR_BLOCK(m, y, c);
     rho1(x, y, m, n);
 }
