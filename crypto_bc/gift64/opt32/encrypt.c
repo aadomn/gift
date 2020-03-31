@@ -69,7 +69,7 @@ void rearrange_key(u32* rkey, const u8* key) {
 * crypto primitives based on GIFT-64 that need to encrypt several blocks with
 * different keys (e.g. LOTUS) can take advantage of fixslicing.
 ****************************************************************************/
-void rearrange_keys(u32* rkey, const u8* key0, const u8* key1) {
+void rearrange_2_keys(u32* rkey, const u8* key0, const u8* key1) {
 	u32 tmp;
 	// key words W6 and W7
 	rkey[0] = REARRANGE_KEYWORD_0_1(key0[14], key0[15]);
@@ -141,10 +141,22 @@ void key_update(u32* next_rkey, const u32* prev_rkey) {
 }
 
 /****************************************************************************
-* Precomputes all round keys.
+* Precomputes all round keys for a given encryption key.
 ****************************************************************************/
 void precompute_rkeys(u32* rkey, const u8* key) {
 	rearrange_key(rkey, key);
+	for(int i = 0; i < 48; i += 8)
+		key_update(rkey + i + 8, rkey + i);
+}
+
+/****************************************************************************
+* Precomputes all round keys. Same as 'precompute_rkeys' but with 2 different
+* keys so that crypto primitives based on GIFT-64 that need to encrypt
+* several blocks with different keys (e.g. LOTUS) can take advantage of
+* fixslicing.
+****************************************************************************/
+void precompute_2_rkeys(u32* rkey, const u8* key0, const u8* key1) {
+	rearrange_2_keys(rkey, key0, key1);
 	for(int i = 0; i < 48; i += 8)
 		key_update(rkey + i + 8, rkey + i);
 }
