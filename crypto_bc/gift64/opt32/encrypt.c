@@ -66,8 +66,8 @@ void rearrange_key(u32* rkey, const u8* key) {
 /****************************************************************************
 * Rearranges the keys 'key0' and 'key1' to match the GIFT-64 fixsliced 
 * representation. Same as 'rearrange_key' but with 2 different keys so that 
-* cryptographic primitives based on GIFT-64 that need encrypt several blocks
-* with different keys (e.g. LOTUS) can take advantage of fixslicing.
+* crypto primitives based on GIFT-64 that need to encrypt several blocks with
+* different keys (e.g. LOTUS) can take advantage of fixslicing.
 ****************************************************************************/
 void rearrange_keys(u32* rkey, const u8* key0, const u8* key1) {
 	u32 tmp;
