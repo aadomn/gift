@@ -61,7 +61,6 @@ key_update:
     strd    r6, r4, [r1], #8        //store rkeys after 4th key update
     bx      lr
 
-
 .align 2
 rearrange_rkey_0:
     ldrd    r6, r4, [r1]
@@ -246,8 +245,23 @@ gift128_keyschedule:
     bl      key_update
     bl      key_update
     bl      key_update
-    bl      key_update
-    sub.w   r1, r1, #336
+    and     r2, r10, r7, lsr #12
+    and     r3, r7, r9
+    orr     r2, r2, r3, lsl #4
+    and     r3, r12, r7, lsr #2
+    orr     r2, r2, r3
+    and     r7, r7, #0x00030000
+    orr     r7, r2, r7, lsl #14
+    strd    r5, r7, [r1], #8        //penultimate key update
+    and     r2, r10, r6, lsr #12
+    and     r3, r6, r9
+    orr     r2, r2, r3, lsl #4
+    and     r3, r12, r6, lsr #2
+    orr     r2, r2, r3
+    and     r6, r6, #0x00030000
+    orr     r6, r2, r6, lsl #14
+    strd    r4, r6, [r1], #8        //ultimate key update
+    sub.w   r1, r1, #320
     // rearrange the rkeys to their respective new representations
     movw    r3, #0x0055
     movt    r3, #0x0055             //r3 <- 0x00550055
