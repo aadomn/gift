@@ -18,7 +18,7 @@ For each algorithm, one can find:
 - `armcortexm_balanced`: Balanced ARM assembly implementation for Cortex-M processors (globally efficient with limited impact on code size)
 - `armcortexm4_masked`: First-order masked ARM assembly implementation for Cortex-M4 processors :warning::rotating_light: No practical evaluation has been undertaken to assess its security! Please do so if you plan to use it to thwart power/electromagnetic side-channel attacks! :rotating_light::warning: 
 
-For more information about the implementations, see the paper [Fixslicing: A New GIFT Representation](https://eprint.iacr.org/2020/) published at [TCHES](https://tches.iacr.org) 2020.
+For more information about the implementations, see the paper [Fixslicing: A New GIFT Representation](https://eprint.iacr.org/2020/412.pdf) published at [TCHES](https://tches.iacr.org) 2020-3.
 
 # Interface
 
