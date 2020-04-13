@@ -1,11 +1,14 @@
 /****************************************************************************
 * Balanced ARM assembly implementation of the GIFT-128 block cipher. This
 * implementation aims at providing efficiency while limiting the impact on 
-* code size. See "Fixslicing: A New GIFT Representation" paper available at 
-* https:// for more details.
+* code size.
+*
+* See "Fixslicing: A New GIFT Representation" paper available at 
+* https://eprint.iacr.org/2020/412.pdf for more details.
 *
 * @author   Alexandre Adomnicai, Nanyang Technological University,
 *           alexandre.adomnicai@ntu.edu.sg
+*
 * @date     March 2020
 ****************************************************************************/
 

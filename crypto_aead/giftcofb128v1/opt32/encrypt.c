@@ -1,8 +1,13 @@
 /*******************************************************************************
 * Constant-time 32-bit implementation of the GIFT-COFB authenticated cipher.
 * 
+* See "Fixslicing: A New GIFT Representation" paper available at 
+* https://eprint.iacr.org/2020/412.pdf for more details on the fixsliced 
+* representation.
+*
 * @author   Alexandre Adomnicai, Nanyang Technological University,
 *           alexandre.adomnicai@ntu.edu.sg
+*
 * @date     January 2020
 *******************************************************************************/
 #include <string.h> //for memcpy

@@ -1,7 +1,10 @@
 /****************************************************************************
 * 1st order masked ARM assembly implementation of the GIFT-128 block cipher.
-* See 'Fixslicing: A New GIFT Representation' paper at https:// for more  
-* details on the fixsliced representation.
+*
+* See 'Fixslicing: A New GIFT Representation' paper available at
+* https://eprint.iacr.org/2020/412.pdf for more details on the fixsliced 
+* representation.
+*
 * Nonlinear gates (AND/OR) are implemented using the techniques introduced in
 * 'Optimal First-Order Boolean Masking for Embedded IoT Devices' published at
 * CARDIS 2017.
