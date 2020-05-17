@@ -17,7 +17,6 @@ For each algorithm, one can find:
 - `armcortexm_compact`: Compact ARM assembly implementation for Cortex-M processors (code size oriented)
 - `armcortexm_balanced`: Balanced ARM assembly implementation for Cortex-M processors (globally efficient with limited impact on code size)
 - `armcortexm4_masked`: First-order masked ARM assembly implementation for Cortex-M4 processors :warning::rotating_light: No practical evaluation has been undertaken to assess its security! Please do so if you plan to use it to thwart power/electromagnetic side-channel attacks! :rotating_light::warning: 
-- `avr_bitsliced_small`: Small memory footprint AVR assembly implementation of bitslicing with a 16 byte key schedule and round keys expanded on the fly (16 bytes of stack space required to expand the round keys).
 
 For more information about the implementations, see the paper [Fixslicing: A New GIFT Representation](https://eprint.iacr.org/2020/412.pdf) published at [TCHES](https://tches.iacr.org) 2020-3.
 
@@ -31,3 +30,11 @@ ARM implementations have been compiled using the [arm-none-eabi toolchain](https
 
 Regarding C implementations, a simple Makefile is provided for GIFT-64 and GIFT-128 to run some test vectors. For GIFT-COFB, test vectors can be executed using the [NIST LWC test vector generation code](https://csrc.nist.gov/CSRC/media/Projects/Lightweight-Cryptography/documents/TestVectorGen.zip).
 
+# AVR implementations
+
+The following AVR implementations were contributed by Rhys Weatherley:
+
+- `avr_bitsliced_small`: Small memory footprint AVR assembly implementation of bitslicing with a 16 byte key schedule and round keys expanded on the fly (16 bytes of stack space required to expand the round keys).
+
+Each AVR directory contains an Arduino sketch for running tests on that
+implementation.  Tested on Arduino Uno and Arduino Mega 2560.
