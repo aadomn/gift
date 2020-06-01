@@ -32,9 +32,24 @@ Regarding C implementations, a simple Makefile is provided for GIFT-64 and GIFT-
 
 # AVR implementations
 
-The following AVR implementations were contributed by Rhys Weatherley:
+The following AVR assembly code implementations of GIFT-128 were contributed
+by Rhys Weatherley and have variants with large, medium, and small RAM
+requirements:
 
-- `avr_bitsliced_small`: Small memory footprint AVR assembly implementation of bitslicing with a 16 byte key schedule and round keys expanded on the fly (16 bytes of stack space required to expand the round keys).
+- `avr_fixsliced_large`: Fixsliced implementation with a large 320 byte key schedule that is expanded ahead of time during key setup.
+- `avr_fixsliced_medium`: Fixsliced implementation with a 16 byte key schedule and round keys expanded on the fly.  80 bytes of stack space are required to expand the round keys.
+- `avr_bitsliced_small`: Bitsliced implementation with a 16 byte key schedule and round keys expanded on the fly.  16 bytes of stack space are required to expand the round keys.
+
+Note: `avr_fixsliced_medium` uses bitslicing for decryption because of
+the difficulty of expanding the reduced fixsliced key schedule in reverse.
+The medium implementation is best used with block cipher modes that only
+require the encrypt direction.
+
+At the moment, only the `avr_bitsliced_small` implementation is provided
+for GIFT-64.  The fixsliced implementations of GIFT-64 are in progress.
 
 Each AVR directory contains an Arduino sketch for running tests on that
 implementation.  Tested on Arduino Uno and Arduino Mega 2560.
+
+All AVR implementations were generated with the
+[genavr tool](https://github.com/rweather/lightweight-crypto/tree/master/src/genavr).
