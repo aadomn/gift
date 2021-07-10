@@ -5,10 +5,9 @@
 * See "Fixslicing: A New GIFT Representation" paper available at 
 * https://eprint.iacr.org/2020/412.pdf for more details.
 *
-* @author   Alexandre Adomnicai, Nanyang Technological University,
-*           alexandre.adomnicai@ntu.edu.sg
+* @author   Alexandre Adomnicai, Nanyang Technological University
 *
-* @date     March 2020
+* @date     July 2021
 ****************************************************************************/
 
 .syntax unified
@@ -31,467 +30,345 @@ rconst:
 .word 0x40500002, 0x01030080, 0x80000006, 0x10008808
 .word 0xc001a000, 0x14500002, 0x01020181, 0x8000001a
 
+/******************************************************************************
+* Macro to compute the SWAPMOVE technique.
+*   - out0-out1     output registers
+*   - in0-in1       input registers
+*   - m             mask
+*   - n             shift value
+*   - tmp           temporary register
+******************************************************************************/
+.macro swpmv    out0, out1, in0, in1, m, n, tmp
+    eor     \tmp, \in1, \in0, lsr \n
+    and     \tmp, \m
+    eor     \out1, \in1, \tmp
+    eor     \out0, \in0, \tmp, lsl \n
+.endm
+
+/******************************************************************************
+* Macro to compute a nibble-wise rotation to the right.
+*   - out           output register
+*   - in            input register
+*   - m0-m1         masks
+*   - n0-n1         shift value
+*   - tmp           temporary register
+******************************************************************************/
+.macro nibror   out, in, m0, m1, n0, n1, tmp
+    and     \tmp, \m0, \in, lsr \n0
+    and     \out, \in, \m1
+    orr     \out, \tmp, \out, lsl \n1
+.endm
+
+/******************************************************************************
+* Macro to compute the SBox (the NOT operation is included in the round keys).
+*   - in0-in3       input/output registers
+*   - tmp           temporary register
+*   - n             ror index value to math fixslicing
+******************************************************************************/
+.macro sbox     in0, in1, in2, in3, tmp, n
+    and     \tmp, \in2, \in0, ror \n
+    eor     \in1, \in1, \tmp
+    and     \tmp, \in1, \in3
+    eor     \in0, \tmp, \in0, ror \n
+    orr     \tmp, \in0, \in1
+    eor     \in2, \tmp, \in2
+    eor     \in3, \in3, \in2
+    eor     \in1, \in1, \in3
+    and     \tmp, \in0, \in1
+    eor     \in2, \in2, \tmp
+    mvn     \in3, \in3
+.endm
+
+/******************************************************************************
+* Macro to compute the first round within a quintuple round routine.
+*   - in0-in3       input/output registers
+******************************************************************************/
+.macro round_0  in0, in1, in2, in3
+    ldr.w   r5, [r0], #4                        // load rconst
+    ldr.w   r6, [r1], #4                        // load 1st rkey word
+    ldr.w   r7, [r1], #4                        // load 2nd rkey word
+    sbox    \in0, \in1, \in2, \in3, r8, #0      // sbox layer
+    nibror  \in3, \in3, r4, r2, 1, 3, r8        // linear layer
+    nibror  \in2, \in2, r2, r4, 3, 1, r8        // linear layer
+    orr     r14, r2, r2, lsl #1                 // 0x33333333 for 'nibror'
+    nibror  \in1, \in1, r14, r14, 2, 2, r8      // linear layer
+    eor     \in1, \in1, r6                      // add 1st rkey word
+    eor     \in2, \in2, r7                      // add 2nd rkey word
+    eor     \in0, \in0, r5                      // add rconst
+.endm
+
+/******************************************************************************
+* Macro to compute the second round within a quintuple round routine.
+*   - in0-in3       input/output registers
+******************************************************************************/
+.macro round_1  in0, in1, in2, in3
+    ldr.w   r5, [r0], #4                        // load rconst
+    ldr.w   r6, [r1], #4                        // load 1st rkey word
+    ldr.w   r7, [r1], #4                        // load 2nd rkey word
+    sbox    \in0, \in1, \in2, \in3, r8, #0      // sbox layer
+    mvn     r14, r3, lsl #12                    // r14<-0x0fff0fff for HALF_ROR
+    nibror  \in3, \in3, r14, r3,  4,  12, r8    // HALF_ROR(in3, 4)
+    nibror  \in2, \in2, r3,  r14, 12,  4, r8    // HALF_ROR(in2, 12)
+    rev16   \in1, \in1                          // HALF_ROR(in1, 8)
+    eor     \in1, \in1, r6                      // add 1st rkey word
+    eor     \in2, \in2, r7                      // add 2nd rkey word
+    eor     \in0, \in0, r5                      // add rconst
+.endm
+
+/******************************************************************************
+* Macro to compute the third round within a quintuple round routine.
+*   - in0-in3       input/output registers
+******************************************************************************/
+.macro round_2  in0, in1, in2, in3
+    ldr.w   r5, [r0], #4                        // load rconst
+    ldr.w   r6, [r1], #4                        // load 1st rkey word
+    ldr.w   r7, [r1], #4                        // load 2nd rkey word
+    sbox    \in0, \in1, \in2, \in3, r8, #0      // sbox layer
+    orr     r14, r2, r2, lsl #2                 // r14<-0x55555555 for swpmv
+    swpmv   \in1, \in1, \in1, \in1, r14, #1, r8
+    eor     r8, \in3, \in3, lsr #1
+    and     r8, r8, r14, lsr #16
+    eor     \in3, \in3, r8
+    eor     \in3, \in3, r8, lsl #1              //SWAPMOVE(r12,r12,0x55550000,1)
+    eor     r8, \in2, \in2, lsr #1
+    and     r8, r8, r14, lsl #16
+    eor     \in2, \in2, r8
+    eor     \in2, \in2, r8, lsl #1              //SWAPMOVE(r11,r11,0x00005555,1)
+    eor     \in1, \in1, r6                      // add 1st rkey word
+    eor     \in2, r7, \in2, ror #16             // add 2nd rkey word
+    eor     \in0, \in0, r5                      // add rconst
+.endm
+
+/******************************************************************************
+* Macro to compute the fourth round within a quintuple round routine.
+*   - in0-in3       input/output registers
+******************************************************************************/
+.macro round_3  in0, in1, in2, in3
+    ldr.w   r6, [r1], #4                        // load 1st rkey word
+    ldr.w   r7, [r1], #4                        // load 2nd rkey word
+    sbox    \in0, \in1, \in2, \in3, r8, #16     // sbox layer
+    eor     r14, r3, r3, lsl #8                 // r14<-0x0f0f0f0f for nibror
+    nibror  \in1, \in1, r14, r14, #4, #4, r8
+    orr     r14, r14, r14, lsl #2               // r14<-0x3f3f3f3f for nibror
+    mvn     r8, r14, lsr #6                     // r8 <-0xc0c0c0c0 for nibror
+    nibror  \in2, \in2, r14, r8, #2, #6, r5
+    nibror  \in3, \in3, r8, r14, #6, #2, r8 
+    ldr.w   r5, [r0], #4                        // load rconst
+    eor     \in1, \in1, r6                      // add 1st rkey word
+    eor     \in2, \in2, r7                      // add 2nd rkey word
+    eor     \in0, \in0, r5                      // add rconst
+.endm
+
+/******************************************************************************
+* Macro to compute the fifth round within a quintuple round routine.
+*   - in0-in3       input/output registers
+******************************************************************************/
+.macro round_4  in0, in1, in2, in3
+    ldr.w   r5, [r0], #4                        // load rconst
+    ldr.w   r6, [r1], #4                        // load 1st rkey word
+    ldr.w   r7, [r1], #4                        // load 2nd rkey word
+    sbox    \in0, \in1, \in2, \in3, r8, #0      // sbox layer
+    eor     \in1, r6, \in1, ror #16             // add 1st keyword
+    eor     \in2, r7, \in2, ror #8              // add 2nd keyword
+    eor     \in0, \in0, r5                      // add rconst
+.endm
+
+/******************************************************************************
+* Macro to compute the GIFT-128 key update (in its classical representation).
+* Two 16-bit rotations are computed on the 32-bit word 'v' given as input.
+*   - u     1st round key word as defined in the specification (U <- W2||W3)
+*   - v     2nd round key word as defined in the specification (V <- W6||W7)
+******************************************************************************/
+.macro k_upd  u, v
+    and     r2, r10, \v, lsr #12
+    and     r3, \v, r9
+    orr     r2, r2, r3, lsl #4
+    and     r3, r12, \v, lsr #2
+    orr     r2, r2, r3
+    and     \v, \v, #0x00030000
+    orr     \v, r2, \v, lsl #14
+    str.w   \u, [r1], #4
+    str.w   \v, [r1], #4
+.endm
+
+/******************************************************************************
+* Macro to rearrange round key words from their classical to fixsliced
+* representations.
+*   - rk0   1st round key word
+*   - rk1   2nd round key word
+*   - idx0  index for SWAPMOVE
+*   - idx1  index for SWAPMOVE
+*   - tmp   temporary register for SWAPMOVE
+******************************************************************************/
+.macro rearr_rk rk0, rk1, idx0, idx1, tmp
+    swpmv   \rk1, \rk1, \rk1, \rk1, r3, \idx0, \tmp
+    swpmv   \rk0, \rk0, \rk0, \rk0, r3, \idx0, \tmp
+    swpmv   \rk1, \rk1, \rk1, \rk1, r10, \idx1, \tmp
+    swpmv   \rk0, \rk0, \rk0, \rk0, r10, \idx1, \tmp
+    swpmv   \rk1, \rk1, \rk1, \rk1, r11, #12, \tmp
+    swpmv   \rk0, \rk0, \rk0, \rk0, r11, #12, \tmp
+    swpmv   \rk1, \rk1, \rk1, \rk1, #0xff, #24, \tmp
+    swpmv   \rk0, \rk0, \rk0, \rk0, #0xff, #24, \tmp
+.endm
+
+/******************************************************************************
+* Soubroutine to update the rkeys according to the classical representation.
+******************************************************************************/
 .align 2
-key_update:
-    and     r2, r10, r7, lsr #12
-    and     r3, r7, r9
-    orr     r2, r2, r3, lsl #4
-    and     r3, r12, r7, lsr #2
-    orr     r2, r2, r3
-    and     r7, r7, #0x00030000
-    orr     r7, r2, r7, lsl #14
-    strd    r5, r7, [r1], #8        //store rkeys after 1st key update
-    and     r2, r10, r6, lsr #12
-    and     r3, r6, r9
-    orr     r2, r2, r3, lsl #4
-    and     r3, r12, r6, lsr #2
-    orr     r2, r2, r3
-    and     r6, r6, #0x00030000
-    orr     r6, r2, r6, lsl #14
-    strd    r4, r6, [r1], #8        //store rkeys after 2nd key update
-    and     r2, r10, r5, lsr #12
-    and     r3, r5, r9
-    orr     r2, r2, r3, lsl #4
-    and     r3, r12, r5, lsr #2
-    orr     r2, r2, r3
-    and     r5, r5, #0x00030000
-    orr     r5, r2, r5, lsl #14
-    strd    r7, r5, [r1], #8        //store rkeys after 3rd key update
-    and     r2, r10, r4, lsr #12
-    and     r3, r4, r9
-    orr     r2, r2, r3, lsl #4
-    and     r3, r12, r4, lsr #2
-    orr     r2, r2, r3
-    and     r4, r4, #0x00030000
-    orr     r4, r2, r4, lsl #14
-    strd    r6, r4, [r1], #8        //store rkeys after 4th key update
+classical_key_update:
+    k_upd   r5, r7                  // 1st classical key update
+    k_upd   r4, r6                  // 2nd classical key update
+    k_upd   r7, r5                  // 3rd classical key update
+    k_upd   r6, r4                  // 4th classical key update
     bx      lr
 
+/******************************************************************************
+* Soubroutine to rearrange round key words from classical to fixsliced
+* representation for round i s.t. i mod 5 = 0.
+******************************************************************************/
 .align 2
 rearrange_rkey_0:
-    ldrd    r6, r4, [r1]
-    eor     r12, r6, r6, lsr #9
-    and     r12, r12, r3
-    eor     r6, r12
-    eor     r6, r6, r12, lsl #9     //SWAPMOVE(r6, r6, 0x00550055, 9);
-    eor     r12, r4, r4, lsr #9
-    and     r12, r12, r3
-    eor     r4, r12
-    eor     r4, r4, r12, lsl #9     //SWAPMOVE(r4, r4, 0x00550055, 9);
-    eor     r12, r6, r6, lsr #18
-    and     r12, r12, r10
-    eor     r6, r12
-    eor     r6, r6, r12, lsl #18    //SWAPMOVE(r6, r6, 0x3333, 18);
-    eor     r12, r4, r4, lsr #18
-    and     r12, r12, r10
-    eor     r4, r12
-    eor     r4, r4, r12, lsl #18    //SWAPMOVE(r4, r4, 0x3333, 18);
-    eor     r12, r6, r6, lsr #12
-    and     r12, r12, r11
-    eor     r6, r12
-    eor     r6, r6, r12, lsl #12    //SWAPMOVE(r6, r6, 0x000f000f, 12);
-    eor     r12, r4, r4, lsr #12
-    and     r12, r12, r11
-    eor     r4, r12
-    eor     r4, r4, r12, lsl #12    //SWAPMOVE(r4, r4, 0x000f000f, 12);
-    eor     r12, r6, r6, lsr #24
-    and     r12, r12, #0xff
-    eor     r6, r12
-    eor     r6, r6, r12, lsl #24    //SWAPMOVE(r6, r6, 0x000000ff, 24);
-    eor     r12, r4, r4, lsr #24
-    and     r12, r12, #0xff
-    eor     r4, r12
-    eor     r4, r4, r12, lsl #24    //SWAPMOVE(r4, r4, 0x000000ff, 24);
-    strd    r6, r4, [r1]
-    bx      lr
+    ldr.w       r6, [r1]                // load 1st rkey word (classical rep)
+    ldr.w       r4, [r1, #4]            // load 2nd rkey word (classical rep)
+    rearr_rk    r4, r6, #9, #18, r12    // rearrange rkey words for round 1
+    str.w       r4, [r1, #4]            // store 2nd rkey word (fixsliced rep)
+    str.w       r6, [r1], #40           // store 1st rkey word (fixsliced rep)
+    bx          lr
 
+/******************************************************************************
+* Soubroutine to rearrange round key words from classical to fixsliced
+* representation for round i s.t. i mod 5 = 1 or 3.
+******************************************************************************/
 .align 2
 rearrange_rkey_1:
-    ldrd    r5, r7, [r1]
-    eor     r8, r7, r7, lsr #3
-    and     r8, r8, r3
-    eor     r7, r8
-    eor     r7, r7, r8, lsl #3      //SWAPMOVE(r7, r7, 0x11111111, 3);
-    eor     r8, r5, r5, lsr #3
-    and     r8, r8, r3
-    eor     r5, r8
-    eor     r5, r5, r8, lsl #3      //SWAPMOVE(r5, r5, 0x11111111, 3);
-    eor     r8, r7, r7, lsr #6
-    and     r8, r8, r10
-    eor     r7, r8
-    eor     r7, r7, r8, lsl #6      //SWAPMOVE(r7, r7, 0x03030303, 6);
-    eor     r8, r5, r5, lsr #6
-    and     r8, r8, r10
-    eor     r5, r8
-    eor     r5, r5, r8, lsl #6      //SWAPMOVE(r5, r5, 0x03030303, 6);
-    eor     r8, r7, r7, lsr #12
-    and     r8, r8, r11
-    eor     r7, r8
-    eor     r7, r7, r8, lsl #12     //SWAPMOVE(r7, r7, 0x000f000f, 12);
-    eor     r8, r5, r5, lsr #12
-    and     r8, r8, r11
-    eor     r5, r8
-    eor     r5, r5, r8, lsl #12     //SWAPMOVE(r5, r5, 0x000f000f, 12);
-    eor     r8, r7, r7, lsr #24
-    and     r8, r8, #0xff
-    eor     r7, r8
-    eor     r7, r7, r8, lsl #24     //SWAPMOVE(r7, r7, 0x000000ff, 24);
-    eor     r8, r5, r5, lsr #24
-    and     r8, r8, #0xff
-    eor     r5, r8
-    eor     r5, r5, r8, lsl #24     //SWAPMOVE(r5, r5, 0x000000ff, 24);
-    strd    r5, r7, [r1]
-    bx      lr
+    ldr.w       r5, [r1]                // load 3rd rkey word (classical rep)
+    ldr.w       r7, [r1, #4]            // load 4th rkey word (classical rep)
+    rearr_rk    r5, r7, #3, #6, r8      // rearrange rkey words for round 2
+    str.w       r7, [r1, #4]            // store 4th rkey word (fixsliced rep)
+    str.w       r5, [r1], #40           // store 3rd rkey word (fixsliced rep)
+    bx          lr
 
+/******************************************************************************
+* Soubroutine to rearrange round key words from classical to fixsliced
+* representation for round i s.t. i mod 5 = 2.
+******************************************************************************/
 .align 2
 rearrange_rkey_2:
-    ldrd    r5, r7, [r1]
-    eor     r8, r7, r7, lsr #15
-    and     r8, r8, r3
-    eor     r7, r8
-    eor     r7, r7, r8, lsl #15     //SWAPMOVE(r7, r7, 0x0000aaaa, 15);
-    eor     r8, r5, r5, lsr #15
-    and     r8, r8, r3
-    eor     r5, r8
-    eor     r5, r5, r8, lsl #15     //SWAPMOVE(r5, r5, 0x0000aaaa, 15);
-    eor     r8, r7, r7, lsr #18
-    and     r8, r8, r10
-    eor     r7, r8
-    eor     r7, r7, r8, lsl #18     //SWAPMOVE(r7, r7, 0x00003333, 18);
-    eor     r8, r5, r5, lsr #18
-    and     r8, r8, r10
-    eor     r5, r8
-    eor     r5, r5, r8, lsl #18     //SWAPMOVE(r5, r5, 0x00003333, 18);
-    eor     r8, r7, r7, lsr #12
-    and     r8, r8, r11
-    eor     r7, r8
-    eor     r7, r7, r8, lsl #12     //SWAPMOVE(r7, r7, 0x000f000f, 12);
-    eor     r8, r5, r5, lsr #12
-    and     r8, r8, r11
-    eor     r5, r8
-    eor     r5, r5, r8, lsl #12     //SWAPMOVE(r5, r5, 0x000f000f, 12);
-    eor     r8, r7, r7, lsr #24
-    and     r8, r8, #0xff
-    eor     r7, r8
-    eor     r7, r7, r8, lsl #24     //SWAPMOVE(r7, r7, 0x00000ff, 24);
-    eor     r8, r5, r5, lsr #24
-    and     r8, r8, #0xff
-    eor     r5, r8
-    eor     r5, r5, r8, lsl #24     //SWAPMOVE(r5, r5, 0x000000ff, 24);
-    strd    r5, r7, [r1]
-    bx      lr
-
-.align 2
-rearrange_rkey_3:
-    ldrd    r5, r7, [r1]
-    eor     r8, r7, r7, lsr #3
-    and     r8, r8, r3
-    eor     r7, r8
-    eor     r7, r7, r8, lsl #3      //SWAPMOVE(r7, r7, 0x0a0a0a0a, 3);
-    eor     r8, r5, r5, lsr #3
-    and     r8, r8, r3
-    eor     r5, r8
-    eor     r5, r5, r8, lsl #3      //SWAPMOVE(r5, r5, 0x0a0a0a0a, 3);
-    eor     r8, r7, r7, lsr #6
-    and     r8, r8, r10
-    eor     r7, r8
-    eor     r7, r7, r8, lsl #6      //SWAPMOVE(r7, r7, 0x00cc00cc, 6);
-    eor     r8, r5, r5, lsr #6
-    and     r8, r8, r10
-    eor     r5, r8
-    eor     r5, r5, r8, lsl #6      //SWAPMOVE(r5, r5, 0x00cc00cc, 6);
-    eor     r8, r7, r7, lsr #12
-    and     r8, r8, r11
-    eor     r7, r8
-    eor     r7, r7, r8, lsl #12     //SWAPMOVE(r7, r7, 0x000f000f, 12);
-    eor     r8, r5, r5, lsr #12
-    and     r8, r8, r11
-    eor     r5, r8
-    eor     r5, r5, r8, lsl #12     //SWAPMOVE(r5, r5, 0x000f000f, 12);
-    eor     r8, r7, r7, lsr #24
-    and     r8, r8, #0xff
-    eor     r7, r8
-    eor     r7, r7, r8, lsl #24     //SWAPMOVE(r7, r7, 0x000000ff, 24);
-    eor     r8, r5, r5, lsr #24
-    and     r8, r8, #0xff
-    eor     r5, r8
-    eor     r5, r5, r8, lsl #24     //SWAPMOVE(r5, r5, 0x000000ff, 24);
-    strd    r5, r7, [r1]
-    bx      lr
+    ldr.w       r5, [r1]                // load 5th rkey word (classical rep)
+    ldr.w       r7, [r1, #4]            // load 6th rkey word (classical rep)
+    rearr_rk    r5, r7, #15, #18, r8    // rearrange rkey words for round 3
+    str.w       r7, [r1, #4]            // store 6th rkey word (fixsliced rep)
+    str.w       r5, [r1], #40           // store 5th rkey word (fixsliced rep)
+    bx          lr
 
 .align 2
 /*****************************************************************************
-* Code size optimized implementation of the GIFTb-128 key schedule.
-* Compute the key schedule in the normal representation and then rearrange all
-* the round keys in their respective fixsliced representations.
+* Implementation of the GIFT-128 key schedule according to fixslicing.
+* The entire round key material is first computed according to the classical
+* representation before being rearranged according to fixslicing.
 *****************************************************************************/
-@ void gift128_keyschedule(const u8* key, u32* rkey)
+@ void gift128_keyschedule(const u8* key, u32* rkey) {
 .global gift128_keyschedule
 .type   gift128_keyschedule,%function
 gift128_keyschedule:
-    push    {r2-r12, r14}
-    ldm     r0, {r4-r7}             //load key words
-    rev     r4, r4
-    rev     r5, r5
-    rev     r6, r6
-    rev     r7, r7
-    strd    r7, r5, [r1], #8        //the first rkeys are not updated
-    strd    r6, r4, [r1], #8        //the first rkeys are not updated
-    // keyschedule using classical representation for the first 20 rounds
+    push    {r1-r12, r14}
+    ldm     r0, {r4-r7}             // load key words
+    rev     r4, r4                  // endianness
+    rev     r5, r5                  // endianness
+    rev     r6, r6                  // endianness
+    rev     r7, r7                  // endianness
+    str.w   r5, [r1, #4]
+    str.w   r7, [r1], #8            //the first rkeys are not updated  
+    str.w   r4, [r1, #4]
+    str.w   r6, [r1], #8            //the first rkeys are not updated
     movw    r12, #0x3fff
     lsl     r12, r12, #16           //r12<- 0x3fff0000
     movw    r10, #0x000f            //r10<- 0x0000000f
     movw    r9, #0x0fff             //r9 <- 0x00000fff
-    bl      key_update
-    bl      key_update
-    bl      key_update
-    bl      key_update
-    bl      key_update
-    bl      key_update
-    bl      key_update
-    bl      key_update
-    bl      key_update
-    and     r2, r10, r7, lsr #12
-    and     r3, r7, r9
-    orr     r2, r2, r3, lsl #4
-    and     r3, r12, r7, lsr #2
-    orr     r2, r2, r3
-    and     r7, r7, #0x00030000
-    orr     r7, r2, r7, lsl #14
-    strd    r5, r7, [r1], #8        //penultimate key update
-    and     r2, r10, r6, lsr #12
-    and     r3, r6, r9
-    orr     r2, r2, r3, lsl #4
-    and     r3, r12, r6, lsr #2
-    orr     r2, r2, r3
-    and     r6, r6, #0x00030000
-    orr     r6, r2, r6, lsl #14
-    strd    r4, r6, [r1], #8        //ultimate key update
-    sub.w   r1, r1, #320
-    // rearrange the rkeys to their respective new representations
+    bl      classical_key_update
+    bl      classical_key_update
+    bl      classical_key_update
+    bl      classical_key_update
+    bl      classical_key_update
+    bl      classical_key_update
+    bl      classical_key_update
+    bl      classical_key_update
+    bl      classical_key_update
+    bl      classical_key_update
+    sub.w   r1, r1, #336
     movw    r3, #0x0055
     movt    r3, #0x0055             //r3 <- 0x00550055
     movw    r10, #0x3333            //r10<- 0x00003333
     movw    r11, #0x000f
     movt    r11, #0x000f            //r11<- 0x000f000f
-    bl      rearrange_rkey_0
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_0
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_0
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_0
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_0
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_0
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_0
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_0
-    sub.w   r1, r1, #272
-    movw    r3, #0x1111
-    movt    r3, #0x1111             //r3 <- 0x11111111
-    movw    r10, #0x0303
-    movt    r10, #0x0303            //r10<- 0x03030303
-    bl      rearrange_rkey_1
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_1
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_1
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_1
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_1
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_1
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_1
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_1
-    sub.w   r1, r1, #272
-    movw    r3, #0xaaaa             //r3 <- 0x0000aaaa
-    movw    r10, #0x3333            //r10<- 0x00003333
-    movw    r11, #0xf0f0            //r11<- 0x0000f0f0
-    bl      rearrange_rkey_2
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_2
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_2
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_2
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_2
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_2
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_2
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_2
-    sub.w   r1, r1, #272
-    movw    r3, #0x0a0a
-    movt    r3, #0x0a0a             //r3 <- 0x0a0a0a0a
-    movw    r10, #0x00cc
-    movt    r10, #0x00cc            //r10<- 0x00cc00cc
-    bl      rearrange_rkey_3
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_3
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_3
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_3
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_3
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_3
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_3
-    add.w   r1, r1, #40
-    bl      rearrange_rkey_3
+    bl      rearrange_rkey_0        // fixslice the rkey words for round 0
+    bl      rearrange_rkey_0        // fixslice the rkey words for round 5
+    bl      rearrange_rkey_0        // fixslice the rkey words for round 10
+    bl      rearrange_rkey_0        // fixslice the rkey words for round 15
+    bl      rearrange_rkey_0        // fixslice the rkey words for round 20
+    bl      rearrange_rkey_0        // fixslice the rkey words for round 25
+    bl      rearrange_rkey_0        // fixslice the rkey words for round 30
+    bl      rearrange_rkey_0        // fixslice the rkey words for round 35
     sub.w   r1, r1, #312
-    pop    {r2-r12, r14}
-    bx      lr
-
-.align 2
-quintuple_round:
-    str.w   r14, [sp]
-    ldr.w   r5, [r0], #4
-    ldr.w   r6, [r1], #4            //load rkey
-    ldr.w   r7, [r1], #4            //load rkey
-    and     r8, r11, r9             //sbox layer
-    eor     r10, r10, r8
-    and     r8, r10, r12
-    eor     r9, r9, r8
-    orr     r8, r9, r10
-    eor     r11, r11, r8
-    eor     r12, r12, r11
-    eor     r10, r10, r12
-    and     r8, r9, r10
-    eor     r11, r11, r8
-    mvn     r12, r12
-    and     r8, r4, r12, lsr #1     //permutation layer
-    and     r12, r12, r2
-    orr     r12, r8, r12, lsl #3    //r12<- NIBBLE_ROR(r12, 1)
-    and     r8, r4, r11
-    and     r11, r2, r11, lsr #3
-    orr     r11, r11, r8, lsl #1    //r11<- NIBBLE_ROR(r11, 3)
-    orr     r14, r2, r2, lsl #1     //r14 <- 0x33333333
-    and     r8, r14, r10, lsr #2
-    and     r10, r10, r14
-    orr     r10, r8, r10, lsl #2    //r10<- NIBBLE_ROR(r10, 2)
-    eor     r10, r10, r6            //add 1st keyword
-    eor     r11, r11, r7            //add 2nd keyword
-    eor     r9, r9, r5              //add rconst
-    ldr.w   r5, [r0], #4
-    ldr.w   r6, [r1], #4            //load rkey
-    ldr.w   r7, [r1], #4            //load rkey
-    and     r8, r12, r11            //sbox layer
-    eor     r10, r10, r8
-    and     r8, r10, r9
-    eor     r12, r12, r8
-    orr     r8, r12, r10
-    eor     r11, r11, r8
-    eor     r9, r9, r11
-    eor     r10, r10, r9
-    and     r8, r12, r10
-    eor     r11, r11, r8
-    mvn     r9, r9
-    mvn     r14, r3, lsl #12        //r0 <- 0x0fff0fff
-    and     r8, r14, r9, lsr #4
-    and     r9, r9, r3
-    orr     r9, r8, r9, lsl #12     //r9 <- HALF_ROR(r9, 4)
-    and     r8, r3, r11, lsr #12
-    and     r11, r11, r14
-    orr     r11, r8, r11, lsl #4    //r11<- HALF_ROR(r11, 12)
-    rev16   r10, r10                //r10<- HALF_ROR(r10, 8)
-    eor     r10, r10, r6            //add 1st keyword
-    eor     r11, r11, r7            //add 2nd keyword
-    eor     r12, r12, r5            //add rconst
-    ldr.w   r5, [r0], #4
-    ldr.w   r6, [r1], #4            //load rkey
-    ldr.w   r7, [r1], #4            //load rkey
-    and     r8, r9, r11             //sbox layer
-    eor     r10, r10, r8
-    and     r8, r10, r12
-    eor     r9, r9, r8
-    orr     r8, r9, r10
-    eor     r11, r11, r8
-    eor     r12, r12, r11
-    eor     r10, r10, r12
-    and     r8, r9, r10
-    eor     r11, r11, r8
-    mvn     r12, r12
-    orr     r14, r2, r2, lsl #2     //r14 <- 0x55555555 for SWAPMOVE
-    eor     r8, r10, r10, lsr #1
-    and     r8, r8, r14
-    eor     r10, r10, r8
-    eor     r10, r10, r8, lsl #1    //SWAPMOVE(r10, r10, 0x55555555, 1)
-    eor     r8, r12, r12, lsr #1
-    and     r8, r8, r14, lsr #16
-    eor     r12, r12, r8
-    eor     r12, r12, r8, lsl #1    //SWAPMOVE(r12, r12, 0x55550000, 1)
-    eor     r8, r11, r11, lsr #1
-    and     r8, r8, r14, lsl #16
-    eor     r11, r11, r8
-    eor     r11, r11, r8, lsl #1    //SWAPMOVE(r11, r11, 0x00005555, 1)
-    eor     r10, r10, r6            //add 1st keyword
-    eor     r11, r7, r11, ror #16   //add 2nd keyword
-    eor     r9, r9, r5              //add rconst
-    ldr.w   r5, [r0], #4
-    ldr.w   r6, [r1], #4            //load rkey
-    ldr.w   r7, [r1], #4            //load rkey
-    and     r8, r11, r12, ror #16   //sbox layer
-    eor     r10, r10, r8
-    and     r8, r10, r9
-    eor     r12, r8, r12, ror #16
-    orr     r8, r12, r10
-    eor     r11, r11, r8
-    eor     r9, r9, r11
-    eor     r10, r10, r9
-    and     r8, r12, r10
-    eor     r11, r11, r8
-    mvn     r9, r9
-    eor     r14, r3, r3, lsl #8     //r14 <- 0x0f0f0f0f for BYTE_ROR
-    and     r8, r14, r10, lsr #4
-    and     r10, r10, r14
-    orr     r10, r8, r10, lsl #4    //r10<- BYTE_ROR(r10, 4)
-    orr     r14, r14, r14, lsl #2   //r14 <- 0x3f3f3f3f for BYTE_ROR
-    mvn     r8, r14                 //r8 <- 0xc0c0c0c0 for BYTE_ROR
-    and     r8, r8, r11, lsl #6
-    and     r11, r14, r11, lsr #2
-    orr     r11, r11, r8            //r11<- BYTE_ROR(r11, 2)
-    mvn     r8, r14, lsr #6
-    and     r8, r8, r9, lsr #6
-    and     r9, r14, r9
-    orr     r9, r8, r9, lsl #2      //r9 <- BYTE_ROR(r9, 6)
-    eor     r10, r10, r6            //add 1st keyword
-    eor     r11, r11, r7            //add 2nd keyword
-    eor     r12, r12, r5            //add rconst
-    ldr.w   r5, [r0], #4
-    ldr.w   r6, [r1], #4            //load rkey
-    ldr.w   r7, [r1], #4            //load rkey
-    ldr.w   lr, [sp]                //restore link register
-    and     r8, r9, r11             //sbox layer
-    eor     r10, r10, r8
-    and     r8, r10, r12
-    eor     r9, r9, r8
-    orr     r8, r9, r10
-    eor     r11, r11, r8
-    eor     r12, r12, r11
-    eor     r10, r10, r12
-    and     r8, r9, r10
-    eor     r11, r11, r8
-    mvn     r12, r12, ror #24
-    eor     r10, r6, r10, ror #16   //add 1st keyword
-    eor     r11, r7, r11, ror #8    //add 2nd keyword
-    eor     r9, r9, r5              //add rconst
-    eor     r9, r9, r12             //swap r9 with r12
-    eor     r12, r12, r9            //swap r9 with r12
-    eor     r9, r9, r12             //swap r9 with r12
+    movw    r3, #0x1111
+    movt    r3, #0x1111             // r3 <- 0x11111111
+    movw    r10, #0x0303
+    movt    r10, #0x0303            // r10<- 0x03030303
+    bl      rearrange_rkey_1        // fixslice the rkey words for round 1
+    bl      rearrange_rkey_1        // fixslice the rkey words for round 6
+    bl      rearrange_rkey_1        // fixslice the rkey words for round 11
+    bl      rearrange_rkey_1        // fixslice the rkey words for round 16
+    bl      rearrange_rkey_1        // fixslice the rkey words for round 21
+    bl      rearrange_rkey_1        // fixslice the rkey words for round 26
+    bl      rearrange_rkey_1        // fixslice the rkey words for round 31
+    bl      rearrange_rkey_1        // fixslice the rkey words for round 36
+    sub.w   r1, r1, #312
+    movw    r3, #0xaaaa             // r3 <- 0x0000aaaa
+    movw    r10, #0x3333            // r10<- 0x00003333
+    movw    r11, #0xf0f0            // r11<- 0x0000f0f0
+    bl      rearrange_rkey_2        // fixslice the rkey words for round 2
+    bl      rearrange_rkey_2        // fixslice the rkey words for round 7
+    bl      rearrange_rkey_2        // fixslice the rkey words for round 12
+    bl      rearrange_rkey_2        // fixslice the rkey words for round 17
+    bl      rearrange_rkey_2        // fixslice the rkey words for round 22
+    bl      rearrange_rkey_2        // fixslice the rkey words for round 27
+    bl      rearrange_rkey_2        // fixslice the rkey words for round 32
+    bl      rearrange_rkey_2        // fixslice the rkey words for round 37
+    sub.w   r1, r1, #312
+    movw    r3, #0x0a0a
+    movt    r3, #0x0a0a             // r3 <- 0x0a0a0a0a
+    movw    r10, #0x00cc
+    movt    r10, #0x00cc            // r10<- 0x00cc00cc
+    bl      rearrange_rkey_1        // fixslice the rkey words for round 3
+    bl      rearrange_rkey_1        // fixslice the rkey words for round 8
+    bl      rearrange_rkey_1        // fixslice the rkey words for round 13
+    bl      rearrange_rkey_1        // fixslice the rkey words for round 18
+    bl      rearrange_rkey_1        // fixslice the rkey words for round 23
+    bl      rearrange_rkey_1        // fixslice the rkey words for round 28
+    bl      rearrange_rkey_1        // fixslice the rkey words for round 33
+    bl      rearrange_rkey_1        // fixslice the rkey words for round 38
+    pop     {r1-r12,r14}
     bx      lr
 
 /*****************************************************************************
-* Code size optimized implementation of the GIFT-128 block cipher.
+* Subroutine to implement a quintuple round of GIFT-128.
+*****************************************************************************/
+.align 2
+quintuple_round:
+    str.w   r14, [sp]
+    round_0 r9, r10, r11, r12
+    round_1 r12, r10, r11, r9
+    round_2 r9, r10, r11, r12
+    round_3 r12, r10, r11, r9
+    round_4 r9, r10, r11, r12
+    ldr.w   r14, [sp]
+    eor     r9, r9, r12, ror #24
+    eor     r12, r9, r12, ror #24
+    eor     r9, r9, r12                 // swap r9 with r12
+    bx      lr
+
+/*****************************************************************************
+* Fully unrolled ARM assembly implementation of the GIFT-128 block cipher.
 * This function simply encrypts a 128-bit block, without any operation mode.
 *****************************************************************************/
 @ void gift128_encrypt_block(u8 *out, const u32* rkey, const u8 *block)
@@ -499,93 +376,53 @@ quintuple_round:
 .type   gift128_encrypt_block,%function
 gift128_encrypt_block:
     push    {r0,r2-r12,r14}
-    sub.w   sp, #4                  //to store 'lr' when calling 'quintuple_round'
+    sub.w   sp, #4          // to store 'lr' when calling 'quintuple_round'
     // ------------------ PACKING ------------------
-    ldm     r2, {r4-r7}             //load plaintext blocks
-    rev     r4, r4
-    rev     r5, r5
-    rev     r6, r6
-    rev     r7, r7
+    ldm     r2, {r4-r7}     // load plaintext blocks
+    rev     r4, r4          // endianess to match the fixsliced representation
+    rev     r5, r5          // endianess to match the fixsliced representation
+    rev     r6, r6          // endianess to match the fixsliced representation
+    rev     r7, r7          // endianess to match the fixsliced representation
     uxth    r8, r5
     uxth    r9, r7
-    orr     r9, r9, r8, lsl #16
-    uxth    r8, r5, ror #16         //rearrange half words before SWAPMOVE calls
+    orr     r9, r9, r8, lsl #16             // r9 <- block[6-7] || block[14-15]
+    uxth    r8, r5, ror #16
     uxth    r10, r7, ror #16
-    orr     r10, r10, r8, lsl #16
+    orr     r10, r10, r8, lsl #16           // r10<- block[4-5] || block[12-13]
     uxth    r8, r4
     uxth    r11, r6
-    orr     r11, r11, r8, lsl #16
+    orr     r11, r11, r8, lsl #16           // r11<- block[2-3] || block[10-11]
     uxth    r8, r4, ror #16
     uxth    r12, r6, ror #16
-    orr     r12, r12, r8, lsl #16
+    orr     r12, r12, r8, lsl #16           // r12<- block[0-1] || block[8-9]
     movw    r2, #0x0a0a
-    movt    r2, #0x0a0a             //r2 <- 0x0a0a0a0a (for SWAPMOVE)
-    eor     r3, r9, r9, lsr #3
-    and     r3, r3, r2
-    eor     r9, r9, r3
-    eor     r9, r9, r3, lsl #3      //SWAPMOVE(r9, r9, r2, 3)
-    eor     r3, r10, r10, lsr #3
-    and     r3, r3, r2
-    eor     r10, r10, r3
-    eor     r10, r10, r3, lsl #3    //SWAPMOVE(r10, r10, r2, 3)
-    eor     r3, r11, r11, lsr #3
-    and     r3, r3, r2
-    eor     r11, r11, r3
-    eor     r11, r11, r3, lsl #3    //SWAPMOVE(r11, r11, r2, 3)
-    eor     r3, r12, r12, lsr #3
-    and     r3, r3, r2
-    eor     r12, r12, r3
-    eor     r12, r12, r3, lsl #3    //SWAPMOVE(r12, r12, r2, 3)
+    movt    r2, #0x0a0a                     // r2 <- 0x0a0a0a0a for SWAPMOVE
+    swpmv   r9,  r9,  r9,  r9,  r2, #3, r3
+    swpmv   r10, r10, r10, r10, r2, #3, r3
+    swpmv   r11, r11, r11, r11, r2, #3, r3
+    swpmv   r12, r12, r12, r12, r2, #3, r3
     movw    r2, #0x00cc
-    movt    r2, #0x00cc
-    eor     r3, r9, r9, lsr #6
-    and     r3, r3, r2
-    eor     r9, r9, r3
-    eor     r9, r9, r3, lsl #6      //SWAPMOVE(r9, r9, r2, 6)
-    eor     r3, r10, r10, lsr #6
-    and     r3, r3, r2
-    eor     r10, r10, r3
-    eor     r10, r10, r3, lsl #6    //SWAPMOVE(r10, r10, r2, 6)
-    eor     r3, r11, r11, lsr #6
-    and     r3, r3, r2
-    eor     r11, r11, r3
-    eor     r11, r11, r3, lsl #6    //SWAPMOVE(r11, r11, r2, 6)
-    eor     r3, r12, r12, lsr #6
-    and     r3, r3, r2
-    eor     r12, r12, r3
-    eor     r12, r12, r3, lsl #6    //SWAPMOVE(r12, r12, r2, 6)
+    movt    r2, #0x00cc                     // r2 <- 0x00cc00cc for SWAPMOVE
+    swpmv   r9,  r9,  r9,  r9,  r2, #6, r3
+    swpmv   r10, r10, r10, r10, r2, #6, r3
+    swpmv   r11, r11, r11, r11, r2, #6, r3
+    swpmv   r12, r12, r12, r12, r2, #6, r3
     movw    r2, #0x000f
-    movt    r2, #0x000f
-    eor     r3, r10, r9, lsr #4
-    and     r3, r3, r2
-    eor     r10, r10, r3
-    eor     r9, r9, r3, lsl #4      //SWAPMOVE(r9, r10, r2, 4)
-    eor     r3, r11, r9, lsr #8
-    and     r3, r3, r2
-    eor     r11, r11, r3
-    eor     r9, r9, r3, lsl #8      //SWAPMOVE(r9, r11, r2, 8)
-    eor     r3, r12, r9, lsr #12
-    and     r3, r3, r2
-    eor     r12, r12, r3
-    eor     r9, r9, r3, lsl #12     //SWAPMOVE(r9, r12, r2, 12)
-    eor     r3, r11, r10, lsr #4
-    and     r3, r3, r2, lsl #4
-    eor     r11, r11, r3
-    eor     r10, r10, r3, lsl #4    //SWAPMOVE(r10, r11, r2, 4)
-    eor     r3, r12, r10, lsr #8
-    and     r3, r3, r2, lsl #4
-    eor     r12, r12, r3
-    eor     r10, r10, r3, lsl #8    //SWAPMOVE(r10, r12, r2, 8)
-    eor     r3, r12, r11, lsr #4
-    and     r3, r3, r2, lsl #8
-    eor     r12, r12, r3
-    eor     r11, r11, r3, lsl #4    //SWAPMOVE(r11, r12, r2, 4)
+    movt    r2, #0x000f                     // r2 <- 0x000f000f for SWAPMOVE
+    swpmv   r9,  r10, r9,  r10, r2, #4,  r3
+    swpmv   r9,  r11, r9,  r11, r2, #8,  r3
+    swpmv   r9,  r12, r9,  r12, r2, #12, r3
+    lsl     r2, r2, #4                      // r2 <- 0x00f000f0 for SWAPMOVE
+    swpmv   r10, r11, r10, r11, r2, #4,  r3
+    swpmv   r10, r12, r10, r12, r2, #8,  r3
+    lsl     r2, r2, #4                      // r2 <- 0x0f000f00 for SWAPMOVE
+    swpmv   r11, r12, r11, r12, r2, #4,  r3
     // ------------------ GIFTb-CORE ROUTINE ------------------
-    mov     r3, r2                  //r3 <- 0x000f000f (for HALF_ROR)
+    mov     r3, r2, lsr #8                  // r3 <- 0x000f000f (for HALF_ROR)
     movw    r2, #0x1111
-    movt    r2, #0x1111             //r2 <- 0x11111111 (for NIBBLE_ROR)
-    mvn     r4, r2, lsl #3          //r4 <- 0x7777777 (for NIBBLE_ROR)
-    adr     r0, rconst              //r0 <- 'rconst' address
+    movt    r2, #0x1111                     // r2 <- 0x11111111 (for NIBBLE_ROR)
+    mvn     r4, r2, lsl #3                  // r4 <- 0x7777777 (for NIBBLE_ROR)
+    adr     r0, rconst                      // r0 <- 'rconst' address
     bl      quintuple_round
     bl      quintuple_round
     bl      quintuple_round
@@ -595,81 +432,41 @@ gift128_encrypt_block:
     bl      quintuple_round
     bl      quintuple_round
     // ------------------ UNPACKING ------------------
-    ldr.w   r0, [sp, #4]            //restore 'ctext' address
+    ldr.w   r0, [sp, #4]                    //restore 'ctext' address
     movw    r2, #0x0f00
-    movt    r2, #0x0f00             //r2 <- 0x0f000f00 (for SWAPMOVE)
-    eor     r3, r12, r11, lsr #4
-    and     r3, r3, r2
-    eor     r12, r12, r3
-    eor     r11, r11, r3, lsl #4    //SWAPMOVE(r11, r12, r2, 4)
-    eor     r3, r12, r10, lsr #8
-    and     r3, r3, r2, lsr #4
-    eor     r12, r12, r3
-    eor     r10, r10, r3, lsl #8    //SWAPMOVE(r10, r12, r2, 8)
-    eor     r3, r11, r10, lsr #4
-    and     r3, r3, r2, lsr #4
-    eor     r11, r11, r3
-    eor     r10, r10, r3, lsl #4    //SWAPMOVE(r10, r11, r2, 4)
-    eor     r3, r12, r9, lsr #12
-    and     r3, r3, r2, lsr #8
-    eor     r12, r12, r3
-    eor     r9, r9, r3, lsl #12     //SWAPMOVE(r9, r12, r2, 12)
-    eor     r3, r11, r9, lsr #8
-    and     r3, r3, r2, lsr #8
-    eor     r11, r11, r3
-    eor     r9, r9, r3, lsl #8      //SWAPMOVE(r9, r11, r2, 8)
-    eor     r3, r10, r9, lsr #4
-    and     r3, r3, r2, lsr #8
-    eor     r10, r10, r3
-    eor     r9, r9, r3, lsl #4      //SWAPMOVE(r9, r10, r2, 4)
+    movt    r2, #0x0f00                     // r2 <- 0x0f000f00 for SWAPMOVE
+    swpmv   r11, r12, r11, r12, r2, #4,  r3
+    lsr     r2, r2, #4                      // r2 <- 0x00f000f0 for SWAPMOVE
+    swpmv   r10, r12, r10, r12, r2, #8,  r3
+    swpmv   r10, r11, r10, r11, r2, #4,  r3
+    lsr     r2, r2, #4                      // r2 <- 0x000f000f for SWAPMOVE
+    swpmv   r9,  r12, r9,  r12, r2, #12, r3
+    swpmv   r9,  r11, r9,  r11, r2, #8,  r3
+    swpmv   r9,  r10, r9,  r10, r2, #4,  r3
     movw    r2, #0x00cc
-    movt    r2, #0x00cc             //r2 <- 0x00cc00cc (for SWAPMOVE)
-    eor     r3, r9, r9, lsr #6
-    and     r3, r3, r2
-    eor     r9, r9, r3
-    eor     r9, r9, r3, lsl #6      //SWAPMOVE(r9, r9, r2, 6)
-    eor     r3, r10, r10, lsr #6
-    and     r3, r3, r2
-    eor     r10, r10, r3
-    eor     r10, r10, r3, lsl #6    //SWAPMOVE(r10, r10, r2, 6)
-    eor     r3, r11, r11, lsr #6
-    and     r3, r3, r2
-    eor     r11, r11, r3
-    eor     r11, r11, r3, lsl #6    //SWAPMOVE(r11, r11, r2, 6)
-    eor     r3, r12, r12, lsr #6
-    and     r3, r3, r2
-    eor     r12, r12, r3
-    eor     r12, r12, r3, lsl #6    //SWAPMOVE(r12, r12, r2, 6)
+    movt    r2, #0x00cc                     // r2 <- 0x00cc00cc for SWAPMOVE
+    swpmv   r9,  r9,  r9,  r9,  r2, #6, r3
+    swpmv   r10, r10, r10, r10, r2, #6, r3
+    swpmv   r11, r11, r11, r11, r2, #6, r3
+    swpmv   r12, r12, r12, r12, r2, #6, r3
     movw    r2, #0x0a0a
-    movt    r2, #0x0a0a
-    eor     r3, r9, r9, lsr #3
-    and     r3, r3, r2
-    eor     r9, r9, r3
-    eor     r9, r9, r3, lsl #3      //SWAPMOVE(r9, r9, r2, 3)
-    eor     r3, r10, r10, lsr #3
-    and     r3, r3, r2
-    eor     r10, r10, r3
-    eor     r10, r10, r3, lsl #3    //SWAPMOVE(r10, r10, r2, 3)
-    eor     r3, r11, r11, lsr #3
-    and     r3, r3, r2
-    eor     r11, r11, r3
-    eor     r11, r11, r3, lsl #3    //SWAPMOVE(r11, r11, r2, 3)
-    eor     r3, r12, r12, lsr #3
-    and     r3, r3, r2
-    eor     r12, r12, r3
-    eor     r12, r12, r3, lsl #3    //SWAPMOVE(r12, r12, r2, 3)
+    movt    r2, #0x0a0a                     // r2 <- 0x0a0a0a0a for SWAPMOVE
+    swpmv   r9,  r9,  r9,  r9,  r2, #3, r3
+    swpmv   r10, r10, r10, r10, r2, #3, r3
+    swpmv   r11, r11, r11, r11, r2, #3, r3
+    swpmv   r12, r12, r12, r12, r2, #3, r3
     lsr     r4, r12, #16
     lsr     r5, r11, #16
-    orr     r4, r5, r4, lsl #16     //output[0]
+    orr     r4, r5, r4, lsl #16             // r4 <- out[0]
     lsr     r5, r10, #16
     lsr     r6, r9, #16
-    orr     r5, r6, r5, lsl #16     //output[1]
+    orr     r5, r6, r5, lsl #16             // r5 <- out[1]
     lsl     r6, r12, #16
     lsl     r7, r11, #16
-    orr     r6, r6, r7, lsr #16     //output[2]
+    orr     r6, r6, r7, lsr #16             // r6 <- out[2]
     lsl     r7, r10, #16
     lsl     r8, r9, #16
-    orr     r7, r7, r8, lsr #16     //output[3]
+    orr     r7, r7, r8, lsr #16             // r7 <- out[3]
     rev     r4, r4
     rev     r5, r5
     rev     r6, r6
@@ -680,7 +477,7 @@ gift128_encrypt_block:
     bx      lr
 
 /*****************************************************************************
-* Code size optimized implementation of the GIFTb-128 block cipher.
+* Fully unrolled ARM assembly implementation of the GIFTb-128 block cipher.
 * This function simply encrypts a 128-bit block, without any operation mode.
 *****************************************************************************/
 @ void giftb128_encrypt_block(u8 *out, const u32* rkey, const u8 *block)
@@ -688,18 +485,18 @@ gift128_encrypt_block:
 .type   giftb128_encrypt_block,%function
 giftb128_encrypt_block:
     push    {r0,r2-r12,r14}
-    sub.w   sp, #4              //to store 'lr' when calling 'quintuple_round'
+    sub.w   sp, #4              // to store 'lr' when calling 'quintuple_round'
     ldm     r2, {r9-r12}        // load plaintext words
     rev     r9, r9
     rev     r10, r10
     rev     r11, r11
     rev     r12, r12
     movw    r2, #0x1111
-    movt    r2, #0x1111         //r2 <- 0x11111111 (for NIBBLE_ROR)
+    movt    r2, #0x1111         // r2 <- 0x11111111 (for NIBBLE_ROR)
     movw    r3, #0x000f
-    movt    r3, #0x000f         //r3 <- 0x000f000f (for HALF_ROR)
-    mvn     r4, r2, lsl #3      //r4 <- 0x7777777 (for NIBBLE_ROR)
-    adr     r0, rconst          //r0 <- 'rconst' address
+    movt    r3, #0x000f         // r3 <- 0x000f000f (for HALF_ROR)
+    mvn     r4, r2, lsl #3      // r4 <- 0x7777777 (for NIBBLE_ROR)
+    adr     r0, rconst          // r0 <- 'rconst' address
     bl      quintuple_round
     bl      quintuple_round
     bl      quintuple_round
@@ -708,7 +505,7 @@ giftb128_encrypt_block:
     bl      quintuple_round
     bl      quintuple_round
     bl      quintuple_round
-    ldr.w   r0, [sp ,#4]        //restore 'ctext' address
+    ldr.w   r0, [sp ,#4]        // restore 'ctext' address
     rev     r9, r9
     rev     r10, r10
     rev     r11, r11
